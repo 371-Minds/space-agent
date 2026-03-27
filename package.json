@@ -4,14 +4,19 @@
   "private": true,
   "description": "Browser-first AI agent with a thin Node.js server.",
   "author": "Jan Tomasek",
-  "main": "desktop/shared/main.js",
+  "main": "packaging/desktop/main.js",
   "scripts": {
     "start": "node A1.js serve",
     "dev": "node --watch A1.js serve",
     "desktop:dev": "electron .",
-    "desktop:pack": "electron-builder --dir",
-    "desktop:dist": "electron-builder",
-    "desktop:dist:mac": "electron-builder --mac"
+    "desktop:pack": "node packaging/scripts/package-host.js --dir",
+    "desktop:dist": "node packaging/scripts/package-host.js",
+    "desktop:dist:mac": "node packaging/scripts/package-macos.js",
+    "package:desktop:host": "node packaging/scripts/package-host.js",
+    "package:desktop:host:dir": "node packaging/scripts/package-host.js --dir",
+    "package:desktop:macos": "node packaging/scripts/package-macos.js",
+    "package:desktop:linux": "node packaging/scripts/package-linux.js",
+    "package:desktop:windows": "node packaging/scripts/package-windows.js"
   },
   "engines": {
     "node": ">=20"
@@ -24,11 +29,11 @@
       "app/**/*",
       "commands/**/*",
       "server/**/*",
-      "desktop/shared/**/*",
+      "packaging/desktop/**/*",
       "package.json"
     ],
     "directories": {
-      "buildResources": "desktop/resources"
+      "buildResources": "packaging/resources"
     },
     "mac": {
       "category": "public.app-category.developer-tools",
@@ -37,18 +42,18 @@
         "zip"
       ],
       "hardenedRuntime": false,
-      "entitlements": "platforms/macos/entitlements.mac.plist",
-      "entitlementsInherit": "platforms/macos/entitlements.mac.plist"
+      "entitlements": "packaging/platforms/macos/entitlements.mac.plist",
+      "entitlementsInherit": "packaging/platforms/macos/entitlements.mac.plist"
     },
     "win": {
-      "icon": "platforms/windows/icon.ico",
+      "icon": "packaging/platforms/windows/icon.ico",
       "target": [
         "nsis",
         "portable"
       ]
     },
     "linux": {
-      "icon": "platforms/linux/icons",
+      "icon": "packaging/platforms/linux/icons",
       "category": "Development",
       "target": [
         "AppImage",

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`platforms/linux/` contains Linux-specific desktop packaging files.
+`packaging/platforms/linux/` contains Linux-specific packaging files.
 
 ## Expected Contents
 

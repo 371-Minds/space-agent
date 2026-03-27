@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`platforms/windows/` contains Windows-specific desktop packaging files.
+`packaging/platforms/windows/` contains Windows-specific packaging files.
 
 ## Expected Contents
 

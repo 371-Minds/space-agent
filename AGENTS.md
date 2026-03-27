@@ -13,10 +13,9 @@ The browser app is the primary runtime. The Node.js server exists only as thin i
 
 - `A1.js`: root CLI router
 - `commands/`: CLI command modules such as `serve`, `help`, `version`, `update`
-- `server/`: thin local server used by browser-only and desktop runs
+- `server/`: thin local server used by browser-only and packaged native runs
 - `app/`: layered browser runtime layout
-- `desktop/shared/`: Electron desktop harness
-- `platforms/`: packaging metadata per platform
+- `packaging/`: native app hosts, packaging scripts, shared packaging resources, and per-platform packaging metadata
 
 ## Layered Browser Model
 

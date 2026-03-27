@@ -2,7 +2,7 @@
 
 ## Purpose
 
-`platforms/macos/` contains macOS-specific desktop packaging files.
+`packaging/platforms/macos/` contains macOS-specific packaging files.
 
 ## Expected Contents
 
