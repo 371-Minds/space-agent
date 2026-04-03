@@ -1,0 +1,54 @@
+<link rel="stylesheet" href="/mod/_core/onscreen_menu/onscreen-menu.css" />
+
+<div
+  x-data="{ isOpen: false }"
+  class="onscreen-menu"
+  @click.outside="isOpen = false"
+  @keydown.escape.window="isOpen = false"
+>
+  <div class="space-topbar-menu">
+    <div class="space-topbar onscreen-menu-shell">
+      <button
+        type="button"
+        class="space-topbar-button space-topbar-button--icon"
+        :class="{ 'is-active': isOpen }"
+        aria-label="Open page menu"
+        aria-haspopup="menu"
+        aria-controls="onscreen-menu-panel"
+        :aria-expanded="String(isOpen)"
+        @click="isOpen = !isOpen"
+      >
+        <x-icon>menu</x-icon>
+      </button>
+    </div>
+
+    <div
+      id="onscreen-menu-panel"
+      class="space-topbar-menu-panel onscreen-menu-panel"
+      x-cloak
+      x-show="isOpen"
+      x-transition.opacity.scale.origin.top.right.duration.140ms
+      role="menu"
+      aria-label="Page menu"
+    >
+      <button
+        type="button"
+        class="space-topbar-menu-action"
+        role="menuitem"
+        @click="isOpen = false; try { window.top.location.assign('/admin') } catch(e) { window.location.assign('/admin') }"
+      >
+        <x-icon>admin_panel_settings</x-icon>
+        <span class="space-topbar-menu-action-label">Admin</span>
+      </button>
+      <button
+        type="button"
+        class="space-topbar-menu-action"
+        role="menuitem"
+        @click="isOpen = false; try { window.top.location.assign('/logout') } catch(e) { window.location.assign('/logout') }"
+      >
+        <x-icon>logout</x-icon>
+        <span class="space-topbar-menu-action-label">Logout</span>
+      </button>
+    </div>
+  </div>
+</div>

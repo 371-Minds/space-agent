@@ -30,6 +30,7 @@ Current server layout:
 - `server/router/router.js`: top-level request routing order and API dispatch
 - `server/router/pages_handler.js`: page-route handler for page auth gating, redirects, and page actions such as `/logout`
 - `server/router/mod_handler.js`: `/mod/...` static module resolution and file serving
+- `server/router/app_fetch_handler.js`: `/~/...` and `/L0/...`, `/L1/...`, `/L2/...` direct app-file serving with permission enforcement
 - `server/router/request_context.js`: AsyncLocalStorage-backed request context and authenticated user resolution
 - `server/router/request_body.js`: low-level request body parsing helpers
 - `server/router/cors.js`: API CORS policy and preflight handling
@@ -48,12 +49,14 @@ Current server layout:
 
 ## Request Flow And Runtime Contracts
 
-- request routing order is: API preflight handling, `/api/proxy`, `/api/<endpoint>`, `/mod/...`, then pages as the last fallback
-- non-`/mod` and non-`/api` requests stay limited to root HTML shells and page actions owned by the pages layer
+- request routing order is: API preflight handling, `/api/proxy`, `/api/<endpoint>`, `/mod/...`, `/~/...` and `/L0/...`/`/L1/...`/`/L2/...` app-file fetches, then pages as the last fallback
+- non-`/mod`, non-`/api`, and non-app-fetch requests stay limited to root HTML shells and page actions owned by the pages layer
 - the router-side pages handler owns page auth gating, page-route redirects, and page actions such as `/logout`
 - public page-shell assets under `/pages/res/...` are served directly from `server/pages/res/` without authentication when public shells need them
 - the authenticated page shells at `/` and `/admin` currently load shared framework styles from `/mod/_core/framework/css/` and bootstrap the browser runtime from `/mod/_core/framework/js/initFw.js`; `/` stays a minimal shell for the injected chat module, while `/admin` keeps its simpler dark shell and pins framework asset requests with `maxLayer=0`
 - `/mod/...` requests resolve through the layered customware model, using the watched `path_index` plus the group index to select the best accessible match from `L0`, `L1`, and `L2`, and they accept a `maxLayer` ceiling query parameter that defaults to `2`
+- `/~/path` fetch requests require authentication and map to the authenticated user's `L2/<username>/path`; they apply the same read-permission model as the file APIs
+- `/L0/...`, `/L1/...`, and `/L2/...` fetch requests require authentication and serve the raw app file at that path subject to the same read-permission checks: own `L2/<username>/`, plus `L0/<group>/` and `L1/<group>/` for group members
 - request identity is derived from the server-issued `space_session` cookie via the router-side `request_context` helper and the watched `user_index`
 - `DEFAULT_HOST` and `DEFAULT_PORT` are the current CLI-managed server config parameters; they read from project `.env` keys `HOST` and `PORT`, and the `get`/`set` CLI commands validate writable values against `commands/params.yaml` before updating `.env`
 - `app/L2/<username>/user.yaml` stores user metadata such as `full_name`; auth state lives under `app/L2/<username>/meta/`, where `password.json` stores the password verifier and `logins.json` stores active session codes
@@ -144,16 +147,17 @@ Current status notes:
 - batch `file_read`, `file_write`, and `file_delete` precheck all requested targets up front and fail fast if any target is invalid, missing, unauthorized, duplicated, or overlapping
 - `file_paths` is the authenticated hierarchy-pattern lookup API; it matches owner-relative glob patterns such as `skills/SKILL.md` across the user's readable `L0`, `L1`, and `L2` roots and returns matched full paths relative to `/app`, while preserving hierarchy order and allowing directory patterns that end with `/`
 - `password_generate` is an authenticated utility endpoint that accepts a JSON body with `password` as a string and returns the raw SCRAM verifier object exactly as it would be written to `app/L2/<username>/meta/password.json`
-- `module_info` is the authenticated `GET` endpoint that accepts a module request path such as `/mod/acme/demo` or a concrete app path and returns the accessible override locations plus per-location Git info
+- `module_info` is the authenticated `GET` endpoint that accepts a module request path such as `/mod/acme/demo` or a concrete app path and returns the accessible override locations plus per-location Git info; it now includes locations the caller can reach through either read or write permission, and `_admin` callers may opt into other users' `L2` locations through `includeOtherUsers` and `ownerId`
 - `module_install` is the authenticated `POST` endpoint that installs or updates a writable `L1/<group>/mod/<author>/<repo>/` or `L2/<user>/mod/<author>/<repo>/` directory from a Git repository with optional `token`, `tag`, or `commit`, and returns the result plus refreshed module info
 - `module_remove` is the authenticated `POST` endpoint that removes a writable module directory through the shared file-delete contract and returns the result plus refreshed module info
-- `module_list` is the authenticated `GET` endpoint that returns all installed modules from L1 and L2 as a flat array; it always uses `maxLayer: 2` regardless of the request context so that admin-origin requests (which run with `maxLayer=0`) still see installed modules; each entry includes `layer`, `ownerId`, `ownerType`, `requestPath`, `path`, `authorId`, `repositoryId`, and `git` info
+- `module_list` is the authenticated `GET` endpoint that always lists against `maxLayer: 2` regardless of the request context so that admin-origin requests (which run with `maxLayer=0`) still see installed modules; it accepts `area=l2_self` by default, `area=l1` for readable-or-writable `L1` modules, admin-only `area=l2_users` for aggregated user-module counts, and admin-only `area=l2_user&ownerId=<username>` for one user's `L2` modules, plus `search` for case-insensitive author-or-repository filtering; entries now include stable `id`, `canRead`, `canWrite`, and, for aggregated user rows, `aggregated`, `ownerCount`, and `ownerPreview` in addition to the module path and Git metadata
 - module installs, updates, and removes must use the shared write-permission model from `file_access`, reuse watchdog-backed `path_index` and `group_index` lookups for module-path normalization and override discovery, and refresh the watchdog after mutations so new module paths become immediately resolvable
 - `user_self_info` returns the authenticated user's derived identity snapshot: `username`, `fullName`, membership groups, managed groups, and `isAdmin`, using the watched `user_index` and `group_index`
 - the current page shells live in `server/pages/`, while all page-serving logic stays in `server/router/pages_handler.js`
 - public shell artwork or other shell-local binaries should live under `server/pages/res/` and load through `/pages/res/...` rather than being inlined into large data URIs in HTML
 - page shells under `server/pages/` should stay minimal and expose stable extension anchors when the frontend runtime should compose content dynamically; do not hardwire module components there when the `mod/**/ext/**` loader can own the composition instead
 - public page shells such as `/login` should not depend on authenticated `/mod/...` assets; keep any pre-auth shell styling or assets local and aligned with `/app/AGENTS.md`
+- `server/pages/login.html` now keeps only login-specific layout, copy, auth flow, and intro-float tuning in the local `TITLE_FLOAT_PARAMS`, `ASTRONAUT_FLOAT_PARAMS`, and nearby float-profile objects; the public backdrop is mirrored from the shared app canvas into `server/pages/res/space-backdrop.css` and `server/pages/res/space-backdrop.js` so the login shell can keep its animated star-drift plus shooting-star version, fixed cropped scene, and browser-zoom compensation without depending on authenticated `/mod/...` assets
 - `/admin` declares `space-max-layer=0`, and server-side module resolution honors that ceiling through explicit `maxLayer` request data plus admin-origin request fallback for browser-native `/mod/...` loads
 - `extensions_load` resolves extension files from layered `mod/**/ext/**` paths using the current user's group inheritance and exact module-path overrides
 - `extensions_load` accepts a top-level `maxLayer` integer in the request body, defaults to `2`, and applies that ceiling before extension override selection

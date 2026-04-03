@@ -1,10 +1,18 @@
 import * as skills from "/mod/_core/admin/views/agent/skills.js";
 
 export const DEFAULT_ADMIN_SYSTEM_PROMPT_PATH = "/mod/_core/admin/views/agent/system-prompt.md";
+export const ADMIN_HISTORY_COMPACT_MODE = Object.freeze({
+  AUTOMATIC: "automatic",
+  USER: "user"
+});
 export const ADMIN_HISTORY_COMPACT_PROMPT_PATH = "/mod/_core/admin/views/agent/compact-prompt.md";
+export const ADMIN_HISTORY_AUTO_COMPACT_PROMPT_PATH = "/mod/_core/admin/views/agent/compact-prompt-auto.md";
 
 let defaultSystemPromptPromise = null;
-let compactPromptPromise = null;
+const compactPromptPromises = {
+  [ADMIN_HISTORY_COMPACT_MODE.AUTOMATIC]: null,
+  [ADMIN_HISTORY_COMPACT_MODE.USER]: null
+};
 
 function normalizeSystemPrompt(systemPrompt = "") {
   return typeof systemPrompt === "string" ? systemPrompt.trim() : "";
@@ -63,8 +71,29 @@ async function loadDefaultSystemPrompt() {
   return loadPromptFile(DEFAULT_ADMIN_SYSTEM_PROMPT_PATH, "default admin system prompt");
 }
 
-async function loadCompactPrompt() {
-  return loadPromptFile(ADMIN_HISTORY_COMPACT_PROMPT_PATH, "admin history compact prompt");
+function normalizeHistoryCompactMode(mode = ADMIN_HISTORY_COMPACT_MODE.USER) {
+  return mode === ADMIN_HISTORY_COMPACT_MODE.AUTOMATIC
+    ? ADMIN_HISTORY_COMPACT_MODE.AUTOMATIC
+    : ADMIN_HISTORY_COMPACT_MODE.USER;
+}
+
+function resolveHistoryCompactPromptConfig(mode) {
+  if (mode === ADMIN_HISTORY_COMPACT_MODE.AUTOMATIC) {
+    return {
+      label: "admin automatic history compact prompt",
+      path: ADMIN_HISTORY_AUTO_COMPACT_PROMPT_PATH
+    };
+  }
+
+  return {
+    label: "admin history compact prompt",
+    path: ADMIN_HISTORY_COMPACT_PROMPT_PATH
+  };
+}
+
+async function loadCompactPrompt(mode) {
+  const promptConfig = resolveHistoryCompactPromptConfig(mode);
+  return loadPromptFile(promptConfig.path, promptConfig.label);
 }
 
 export async function fetchDefaultAdminSystemPrompt(options = {}) {
@@ -84,17 +113,18 @@ export async function fetchDefaultAdminSystemPrompt(options = {}) {
 
 export async function fetchAdminHistoryCompactPrompt(options = {}) {
   const forceRefresh = options.forceRefresh === true;
+  const mode = normalizeHistoryCompactMode(options.mode);
 
-  if (!forceRefresh && compactPromptPromise) {
-    return compactPromptPromise;
+  if (!forceRefresh && compactPromptPromises[mode]) {
+    return compactPromptPromises[mode];
   }
 
-  compactPromptPromise = loadCompactPrompt().catch((error) => {
-    compactPromptPromise = null;
+  compactPromptPromises[mode] = loadCompactPrompt(mode).catch((error) => {
+    compactPromptPromises[mode] = null;
     throw error;
   });
 
-  return compactPromptPromise;
+  return compactPromptPromises[mode];
 }
 
 export function extractCustomAdminSystemPrompt(storedPrompt = "", defaultSystemPrompt = "") {

@@ -1,5 +1,9 @@
 @import "./google-icons.css";
-@import "./visual.css";
+
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
 
 html {
   scrollbar-width: thin;

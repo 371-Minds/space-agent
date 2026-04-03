@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Space Agent Login</title>
+    <link rel="stylesheet" href="/pages/res/space-backdrop.css" />
     <style>
       :root {
         color-scheme: dark;
@@ -58,261 +59,49 @@
         min-height: 100%;
       }
 
-      /* Mirrors /mod/_core/framework/css/visual.css for the public login shell. */
       body.space-theme-canvas {
-        margin: 0;
-        min-height: 100vh;
         display: grid;
         align-items: center;
         padding: clamp(0.875rem, 3vw, 2rem);
         overflow: hidden;
-        position: relative;
-        background:
-          radial-gradient(circle at 50% 45%, rgba(148, 188, 255, 0.14) 0%, transparent 27%),
-          radial-gradient(circle at 50% 56%, rgba(121, 237, 216, 0.08) 0%, transparent 18%),
-          radial-gradient(circle at 18% 18%, var(--color-backdrop-glow-primary) 0%, transparent 28%),
-          radial-gradient(circle at 82% 14%, var(--color-backdrop-glow-secondary) 0%, transparent 23%),
-          radial-gradient(circle at 50% 120%, var(--color-backdrop-glow-depth) 0%, transparent 38%),
-          linear-gradient(180deg, var(--color-canvas-elevated) 0%, var(--color-canvas) 52%, var(--color-canvas-deep) 100%);
-        color: var(--color-text-primary);
       }
 
-      .space-parallax {
-        --space-star-speed-multiplier: 2;
-        position: fixed;
-        inset: 0;
-        overflow: hidden;
-        pointer-events: none;
-        z-index: 0;
+      @keyframes login-fadein {
+        from { opacity: 0; }
+        to   { opacity: 1; }
       }
 
-      .space-parallax-layer,
-      .space-shooting-stars {
-        position: absolute;
-        inset: -24vmax;
-        pointer-events: none;
+      @keyframes login-fadeup {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: translateY(0); }
       }
 
-      .space-parallax-layer {
-        --space-drift-x: 0px;
-        --space-drift-y: 0px;
-        --space-duration: 1s;
-        --space-rotate: 0deg;
-        --space-scale: 1;
-        background-repeat: repeat;
-        background-position: 0 0;
-        transform: translate3d(0, 0, 0) rotate(var(--space-rotate)) scale(var(--space-scale));
-        transform-origin: center;
+      .intro-art {
+        animation: login-fadein 1.35s ease-out both;
+        animation-delay: 0ms;
       }
 
-      .space-star-layer {
-        backface-visibility: hidden;
-        will-change: transform;
-        animation:
-          space-theme-diagonal-drift
-          calc(var(--space-duration) / var(--space-star-speed-multiplier))
-          linear
-          infinite;
+      h1 {
+        animation: login-fadeup 1.35s ease-out both;
+        animation-delay: 330ms;
       }
 
-      .space-glow-layer {
-        --space-rotate: -6deg;
-        --space-scale: 1.08;
-        inset: -18vmax;
-        opacity: 0.68;
-        background:
-          radial-gradient(circle at 24% 20%, rgba(148, 188, 255, 0.14) 0%, transparent 28%),
-          radial-gradient(circle at 78% 16%, rgba(121, 237, 216, 0.1) 0%, transparent 22%),
-          radial-gradient(circle at 50% 108%, rgba(59, 95, 172, 0.16) 0%, transparent 34%);
-        background-repeat: no-repeat;
-        animation: none;
+      .intro-copy {
+        animation: login-fadeup 1.35s ease-out both;
+        animation-delay: 600ms;
       }
 
-      .space-star-layer-deep {
-        --space-drift-x: 216.3px;
-        --space-drift-y: 216.3px;
-        --space-duration: 260s;
-        --space-rotate: 0deg;
-        --space-scale: 1.04;
-        opacity: 0.36;
-        background-image:
-          radial-gradient(circle at 24px 30px, var(--color-backdrop-star-soft) 0 0.55px, transparent 1.18px),
-          radial-gradient(circle at 96px 72px, var(--color-backdrop-star-soft) 0 0.46px, transparent 1.1px),
-          radial-gradient(circle at 158px 126px, var(--color-backdrop-star-soft) 0 0.52px, transparent 1.16px),
-          radial-gradient(circle at 52px 166px, var(--color-backdrop-star-soft) 0 0.5px, transparent 1.12px),
-          radial-gradient(circle at 187px 44px, var(--color-backdrop-star-soft) 0 0.48px, transparent 1.08px),
-          radial-gradient(circle at 128px 188px, var(--color-backdrop-star-soft) 0 0.44px, transparent 1.04px),
-          radial-gradient(circle at 204px 168px, var(--color-backdrop-star-soft) 0 0.5px, transparent 1.12px);
-        background-size: 208px 208px;
-      }
-
-      .space-star-layer-far {
-        --space-drift-x: 244.1px;
-        --space-drift-y: 244.1px;
-        --space-duration: 170s;
-        --space-rotate: 0deg;
-        --space-scale: 1.08;
-        opacity: 0.56;
-        background-image:
-          radial-gradient(circle at 28px 22px, var(--color-backdrop-star-soft) 0 0.68px, transparent 1.3px),
-          radial-gradient(circle at 92px 84px, var(--color-backdrop-star-strong) 0 0.82px, transparent 1.5px),
-          radial-gradient(circle at 146px 44px, var(--color-backdrop-star-soft) 0 0.64px, transparent 1.24px),
-          radial-gradient(circle at 188px 134px, var(--color-backdrop-star-soft) 0 0.58px, transparent 1.18px),
-          radial-gradient(circle at 64px 168px, var(--color-backdrop-star-accent) 0 0.76px, transparent 1.4px),
-          radial-gradient(circle at 206px 198px, var(--color-backdrop-star-soft) 0 0.62px, transparent 1.22px),
-          radial-gradient(circle at 118px 206px, var(--color-backdrop-star-soft) 0 0.66px, transparent 1.28px),
-          radial-gradient(circle at 222px 84px, var(--color-backdrop-star-strong) 0 0.72px, transparent 1.36px);
-        background-size: 226px 226px;
-      }
-
-      .space-star-layer-mid {
-        --space-drift-x: 264.2px;
-        --space-drift-y: 264.2px;
-        --space-duration: 118s;
-        --space-rotate: 0deg;
-        --space-scale: 1.11;
-        opacity: 0.62;
-        background-image:
-          radial-gradient(circle at 26px 24px, var(--color-backdrop-star-soft) 0 0.74px, transparent 1.34px),
-          radial-gradient(circle at 74px 102px, var(--color-backdrop-star-strong) 0 0.9px, transparent 1.58px),
-          radial-gradient(circle at 126px 48px, var(--color-backdrop-star-soft) 0 0.68px, transparent 1.28px),
-          radial-gradient(circle at 182px 138px, var(--color-backdrop-star-accent) 0 0.84px, transparent 1.48px),
-          radial-gradient(circle at 56px 184px, var(--color-backdrop-star-soft) 0 0.7px, transparent 1.3px),
-          radial-gradient(circle at 154px 198px, var(--color-backdrop-star-strong) 0 0.78px, transparent 1.42px),
-          radial-gradient(circle at 214px 76px, var(--color-backdrop-star-soft) 0 0.72px, transparent 1.34px),
-          radial-gradient(circle at 228px 210px, var(--color-backdrop-star-soft) 0 0.66px, transparent 1.26px);
-        background-size: 238px 238px;
-      }
-
-      .space-star-layer-near {
-        --space-drift-x: 298.7px;
-        --space-drift-y: 298.7px;
-        --space-duration: 82s;
-        --space-rotate: 0deg;
-        --space-scale: 1.14;
-        opacity: 0.76;
-        background-image:
-          radial-gradient(circle at 36px 28px, var(--color-backdrop-star-halo) 0 2.2px, transparent 5.5px),
-          radial-gradient(circle at 36px 28px, var(--color-backdrop-star-strong) 0 0.96px, transparent 1.72px),
-          radial-gradient(circle at 136px 88px, var(--color-backdrop-star-halo-accent) 0 2.5px, transparent 6px),
-          radial-gradient(circle at 136px 88px, var(--color-backdrop-star-accent) 0 1.04px, transparent 1.82px),
-          radial-gradient(circle at 84px 182px, var(--color-backdrop-star-halo) 0 2.3px, transparent 5.6px),
-          radial-gradient(circle at 84px 182px, var(--color-backdrop-star-strong) 0 0.92px, transparent 1.68px),
-          radial-gradient(circle at 196px 148px, var(--color-backdrop-star-strong) 0 0.84px, transparent 1.5px);
-        background-size: 262px 262px;
-      }
-
-      .space-star-layer-close {
-        --space-drift-x: 358.7px;
-        --space-drift-y: 358.7px;
-        --space-duration: 62s;
-        --space-rotate: 0deg;
-        --space-scale: 1.18;
-        opacity: 0.86;
-        background-image:
-          radial-gradient(circle at 52px 44px, var(--color-backdrop-star-halo) 0 3px, transparent 7.3px),
-          radial-gradient(circle at 52px 44px, var(--color-backdrop-star-strong) 0 1.08px, transparent 1.88px),
-          radial-gradient(circle at 186px 164px, var(--color-backdrop-star-halo-accent) 0 3.2px, transparent 7.8px),
-          radial-gradient(circle at 186px 164px, var(--color-backdrop-star-accent) 0 1.18px, transparent 2px),
-          radial-gradient(circle at 226px 78px, var(--color-backdrop-star-halo) 0 2.8px, transparent 7px),
-          radial-gradient(circle at 226px 78px, var(--color-backdrop-star-strong) 0 1.04px, transparent 1.82px),
-          radial-gradient(circle at 122px 228px, var(--color-backdrop-star-halo) 0 2.7px, transparent 6.8px),
-          radial-gradient(circle at 122px 228px, var(--color-backdrop-star-strong) 0 0.98px, transparent 1.74px);
-        background-size: 304px 304px;
-      }
-
-      .space-shooting-stars {
-        inset: 0;
-        overflow: hidden;
-      }
-
-      .space-shooting-star {
-        --space-shooting-angle: 24deg;
-        --space-shooting-distance-x: 36vmax;
-        --space-shooting-distance-y: 14vmax;
-        --space-shooting-duration: 1200ms;
-        --space-shooting-length: 10rem;
-        position: absolute;
-        top: 20%;
-        left: 20%;
-        width: var(--space-shooting-length);
-        height: 2px;
-        border-radius: 999px;
-        background: linear-gradient(
-          90deg,
-          rgba(255, 255, 255, 0) 0%,
-          rgba(255, 255, 255, 0.03) 28%,
-          rgba(148, 188, 255, 0.18) 56%,
-          rgba(255, 255, 255, 0.96) 100%
-        );
-        transform-origin: right center;
-        filter:
-          drop-shadow(0 0 6px rgba(255, 255, 255, 0.5))
-          drop-shadow(0 0 18px rgba(148, 188, 255, 0.22));
-        opacity: 0;
-        will-change: transform, opacity;
-      }
-
-      .space-shooting-star.is-active {
-        animation: space-theme-shooting-star-flight var(--space-shooting-duration) linear forwards;
-      }
-
-      @keyframes space-theme-diagonal-drift {
-        from {
-          transform: translate3d(0, 0, 0) rotate(var(--space-rotate)) scale(var(--space-scale));
-        }
-
-        to {
-          transform:
-            translate3d(var(--space-drift-x), var(--space-drift-y), 0)
-            rotate(var(--space-rotate))
-            scale(var(--space-scale));
-        }
-      }
-
-      @keyframes space-theme-shooting-star-flight {
-        0%,
-        11% {
-          opacity: 0;
-          transform: translate3d(0, 0, 0) rotate(var(--space-shooting-angle)) scaleX(0.16);
-        }
-
-        18% {
-          opacity: 0;
-          transform: translate3d(0, 0, 0) rotate(var(--space-shooting-angle)) scaleX(0.24);
-        }
-
-        42% {
-          opacity: 0.95;
-          transform:
-            translate3d(
-              calc(var(--space-shooting-distance-x) * 0.58),
-              calc(var(--space-shooting-distance-y) * 0.58),
-              0
-            )
-            rotate(var(--space-shooting-angle))
-            scaleX(1);
-        }
-
-        100% {
-          opacity: 0;
-          transform:
-            translate3d(var(--space-shooting-distance-x), var(--space-shooting-distance-y), 0)
-            rotate(var(--space-shooting-angle))
-            scaleX(0.38);
-        }
+      .login-panel {
+        animation: login-fadeup 0.7s ease-out both;
+        animation-delay: 1150ms;
       }
 
       @media (prefers-reduced-motion: reduce) {
-        .space-star-layer {
+        .intro-art,
+        h1,
+        .intro-copy,
+        .login-panel {
           animation: none;
-          transform: translate3d(0, 0, 0) rotate(var(--space-rotate)) scale(var(--space-scale));
-        }
-
-        .space-shooting-star,
-        .space-shooting-star.is-active {
-          animation: none;
-          opacity: 0;
         }
       }
 
@@ -702,16 +491,16 @@
     </style>
   </head>
   <body class="space-theme-canvas">
-    <div class="space-parallax" aria-hidden="true">
-      <div class="space-parallax-layer space-glow-layer"></div>
-      <div class="space-parallax-layer space-star-layer space-star-layer-deep"></div>
-      <div class="space-parallax-layer space-star-layer space-star-layer-far"></div>
-      <div class="space-parallax-layer space-star-layer space-star-layer-mid"></div>
-      <div class="space-parallax-layer space-star-layer space-star-layer-near"></div>
-      <div class="space-parallax-layer space-star-layer space-star-layer-close"></div>
-      <div class="space-shooting-stars">
-        <div class="space-shooting-star" data-shooting-star></div>
-        <div class="space-shooting-star" data-shooting-star></div>
+    <div class="space-backdrop" data-space-backdrop aria-hidden="true">
+      <div class="space-backdrop-layer space-backdrop-glow"></div>
+      <div class="space-backdrop-layer space-backdrop-stars space-backdrop-stars-deep"></div>
+      <div class="space-backdrop-layer space-backdrop-stars space-backdrop-stars-far"></div>
+      <div class="space-backdrop-layer space-backdrop-stars space-backdrop-stars-mid"></div>
+      <div class="space-backdrop-layer space-backdrop-stars space-backdrop-stars-near"></div>
+      <div class="space-backdrop-layer space-backdrop-stars space-backdrop-stars-close"></div>
+      <div class="space-backdrop-trails">
+        <div class="space-backdrop-trail" data-space-backdrop-trail></div>
+        <div class="space-backdrop-trail" data-space-backdrop-trail></div>
       </div>
     </div>
     <main class="shell">
@@ -727,6 +516,7 @@
               src="/pages/res/astronaut_no_bg.webp"
               alt=""
               decoding="async"
+              draggable="false"
             />
           </div>
         </div>
@@ -777,78 +567,46 @@
         <div id="status" class="status" role="status" aria-live="polite"></div>
       </section>
     </main>
+    <script src="/pages/res/space-backdrop.js"></script>
     <script>
       const LOGIN_PREFIX = "space-login-v1";
       const CLIENT_KEY_LABEL = "Client Key";
       const SERVER_KEY_LABEL = "Server Key";
-      const INTRO_FLOAT_BASE_PROFILE = Object.freeze({
-        blend: Object.freeze({
-          positionMs: 1480,
-          rotationMs: 5600
-        }),
-        drift: Object.freeze({
-          rotate: Object.freeze({
-            primaryAmplitude: 2.4,
-            primaryPeriodMs: 8200,
-            secondaryAmplitude: 1.1,
-            secondaryPeriodMs: 4600
-          }),
-          x: Object.freeze({
-            primaryAmplitude: 4.8,
-            primaryPeriodMs: 5200,
-            secondaryAmplitude: 2.1,
-            secondaryPeriodMs: 2860
-          }),
-          y: Object.freeze({
-            primaryAmplitude: 5.4,
-            primaryPeriodMs: 6100,
-            secondaryAmplitude: 2,
-            secondaryPeriodMs: 3300
-          })
-        }),
-        wander: Object.freeze({
-          positionIntervalMaxMs: 5600,
-          positionIntervalMinMs: 3000,
-          rotationIntervalMaxMs: 5600,
-          rotationIntervalMinMs: 3000,
-          rotateRange: 5,
-          xRange: 10,
-          yRange: 8
-        })
-      });
-      // Tune the title directly here; the astronaut derives from the same knobs at 1.5x.
+      // Tune the title and astronaut independently here when the login shell motion needs retuning.
       const TITLE_FLOAT_PARAMS = Object.freeze({
-        movementDistance: 1,
-        movementSpeed: 1,
-        rotationDistance: 1,
-        rotationSpeed: 1
+        movementDistance: 1.5,
+        movementSpeed: 1.5,
+        rotationDistance: 1.5,
+        rotationSpeed: 1.5
       });
-      const ASTRONAUT_FLOAT_PARAMS = Object.freeze(scaleFloatParams(TITLE_FLOAT_PARAMS, 1.5));
-      const TITLE_FLOAT_PROFILE = buildFloatProfile(INTRO_FLOAT_BASE_PROFILE, TITLE_FLOAT_PARAMS);
+      const ASTRONAUT_FLOAT_PARAMS = Object.freeze({
+        movementDistance: 3,
+        movementSpeed: 0.9,
+        rotationDistance: 0.6,
+        rotationSpeed: 0.45
+      });
+      const TITLE_FLOAT_PROFILE = buildFloatProfile(
+        Object.freeze({
+          orbitPeriodMs: 11800,
+          rotationAmplitude: 4.5,
+          rotationPeriodMs: 16200,
+          xRadius: 6.6,
+          yRadius: 7.4
+        }),
+        TITLE_FLOAT_PARAMS
+      );
       const ASTRONAUT_FLOAT_PROFILE = buildFloatProfile(
-        INTRO_FLOAT_BASE_PROFILE,
+        Object.freeze({
+          orbitPeriodMs: 12400,
+          rotationAmplitude: 100,
+          rotationLimitEnabled: false,
+          rotationMaxDeg: 30,
+          rotationPeriodMs: 17600,
+          xRadius: 7.2,
+          yRadius: 8.2
+        }),
         ASTRONAUT_FLOAT_PARAMS
       );
-      const SHOOTING_STAR_PROFILE = Object.freeze({
-        delayMaxMs: 6200,
-        delayMinMs: 1800,
-        durationMaxMs: 1480,
-        durationMinMs: 960,
-        initialDelayMaxMs: 2200,
-        initialDelayMinMs: 280,
-        lengthMaxRem: 12.6,
-        lengthMinRem: 8.4,
-        travelMaxVmax: 72,
-        travelMinVmax: 38,
-        directionPools: Object.freeze([
-          Object.freeze({ angleMaxDeg: 34, angleMinDeg: 16, leftMax: 48, leftMin: 6, topMax: 44, topMin: 4 }),
-          Object.freeze({ angleMaxDeg: 58, angleMinDeg: 38, leftMax: 34, leftMin: 4, topMax: 26, topMin: 2 }),
-          Object.freeze({ angleMaxDeg: 166, angleMinDeg: 144, leftMax: 94, leftMin: 52, topMax: 50, topMin: 6 }),
-          Object.freeze({ angleMaxDeg: 122, angleMinDeg: 102, leftMax: 96, leftMin: 66, topMax: 28, topMin: 2 }),
-          Object.freeze({ angleMaxDeg: -14, angleMinDeg: -34, leftMax: 52, leftMin: 8, topMax: 92, topMin: 42 }),
-          Object.freeze({ angleMaxDeg: 214, angleMinDeg: 194, leftMax: 92, leftMin: 50, topMax: 90, topMin: 46 })
-        ])
-      });
       const textEncoder = new TextEncoder();
       const form = document.getElementById("login-form");
       const usernameInput = document.getElementById("username");
@@ -859,14 +617,18 @@
       const guestCreateButton = document.getElementById("guest-create-button");
       const introTitle = document.getElementById("intro-title");
       const introAstronaut = document.getElementById("intro-astronaut");
-      const shootingStarEls = Array.from(document.querySelectorAll("[data-shooting-star]"));
+      const spaceBackdropRoot = document.querySelector("[data-space-backdrop]");
+      const spaceThemeCanvas = document.body;
       const statusEl = document.getElementById("status");
       const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-      const shootingStarTimers = new WeakMap();
       let guestCredentials = null;
       let introFloatFrame = 0;
       let introFloatStartTime = 0;
-      let introFloatLastTime = 0;
+      
+      window.SpaceBackdrop?.install?.(spaceBackdropRoot, {
+        canvas: spaceThemeCanvas,
+        motionQuery: prefersReducedMotion
+      });
 
       function setStatus(message, tone = "") {
         statusEl.textContent = message;
@@ -898,195 +660,66 @@
         introAstronaut.style.setProperty("--astronaut-rotate", `${rotation.toFixed(1)}deg`);
       }
 
-      function scaleFloatParams(params, multiplier) {
-        return {
-          movementDistance: params.movementDistance * multiplier,
-          movementSpeed: params.movementSpeed * multiplier,
-          rotationDistance: params.rotationDistance * multiplier,
-          rotationSpeed: params.rotationSpeed * multiplier
-        };
-      }
-
       function scaleDuration(durationMs, speedMultiplier) {
         return durationMs / Math.max(speedMultiplier, 0.01);
       }
 
-      function scaleFloatAxis(axisProfile, distanceMultiplier, speedMultiplier) {
-        return Object.freeze({
-          primaryAmplitude: axisProfile.primaryAmplitude * distanceMultiplier,
-          primaryPeriodMs: scaleDuration(axisProfile.primaryPeriodMs, speedMultiplier),
-          secondaryAmplitude: axisProfile.secondaryAmplitude * distanceMultiplier,
-          secondaryPeriodMs: scaleDuration(axisProfile.secondaryPeriodMs, speedMultiplier)
-        });
-      }
-
       function buildFloatProfile(baseProfile, params) {
+        const rotationMaxDeg =
+          baseProfile.rotationLimitEnabled === false
+            ? Infinity
+            : (baseProfile.rotationMaxDeg ?? Infinity);
+
         return Object.freeze({
-          blend: Object.freeze({
-            positionMs: scaleDuration(baseProfile.blend.positionMs, params.movementSpeed),
-            rotationMs: scaleDuration(baseProfile.blend.rotationMs, params.rotationSpeed)
-          }),
-          drift: Object.freeze({
-            rotate: scaleFloatAxis(
-              baseProfile.drift.rotate,
-              params.rotationDistance,
-              params.rotationSpeed
-            ),
-            x: scaleFloatAxis(
-              baseProfile.drift.x,
-              params.movementDistance,
-              params.movementSpeed
-            ),
-            y: scaleFloatAxis(
-              baseProfile.drift.y,
-              params.movementDistance,
-              params.movementSpeed
-            )
-          }),
-          wander: Object.freeze({
-            positionIntervalMaxMs: scaleDuration(
-              baseProfile.wander.positionIntervalMaxMs,
-              params.movementSpeed
-            ),
-            positionIntervalMinMs: scaleDuration(
-              baseProfile.wander.positionIntervalMinMs,
-              params.movementSpeed
-            ),
-            rotationIntervalMaxMs: scaleDuration(
-              baseProfile.wander.rotationIntervalMaxMs,
-              params.rotationSpeed
-            ),
-            rotationIntervalMinMs: scaleDuration(
-              baseProfile.wander.rotationIntervalMinMs,
-              params.rotationSpeed
-            ),
-            rotateRange: baseProfile.wander.rotateRange * params.rotationDistance,
-            xRange: baseProfile.wander.xRange * params.movementDistance,
-            yRange: baseProfile.wander.yRange * params.movementDistance
-          })
+          orbitPeriodMs: scaleDuration(baseProfile.orbitPeriodMs, params.movementSpeed),
+          rotationAmplitude: Math.min(
+            rotationMaxDeg,
+            baseProfile.rotationAmplitude * params.rotationDistance
+          ),
+          rotationPeriodMs: scaleDuration(baseProfile.rotationPeriodMs, params.rotationSpeed),
+          xRadius: baseProfile.xRadius * params.movementDistance,
+          yRadius: baseProfile.yRadius * params.movementDistance
         });
-      }
-
-      class FloatingMotionTarget {
-        constructor(element, applyPose, profile, offsets = {}) {
-          this.element = element;
-          this.applyPose = applyPose;
-          this.profile = profile;
-          this.offsets = Object.freeze({
-            rotate: offsets.rotate || 0,
-            x: offsets.x || 0,
-            y: offsets.y || 0,
-            time: offsets.time || 0
-          });
-          this.reset();
-        }
-
-        reset() {
-          this.nextPositionTargetAt = 0;
-          this.nextRotationTargetAt = 0;
-          this.currentX = 0;
-          this.currentY = 0;
-          this.currentRotation = 0;
-          this.targetX = 0;
-          this.targetY = 0;
-          this.targetRotation = 0;
-          this.applyPose(0, 0, 0);
-        }
-
-        choosePositionTarget(timestamp) {
-          const { wander } = this.profile;
-
-          this.targetX = randomBetween(-wander.xRange, wander.xRange);
-          this.targetY = randomBetween(-wander.yRange, wander.yRange);
-          this.nextPositionTargetAt =
-            timestamp +
-            wander.positionIntervalMinMs +
-            Math.random() * (wander.positionIntervalMaxMs - wander.positionIntervalMinMs);
-        }
-
-        chooseRotationTarget(timestamp) {
-          const { wander } = this.profile;
-
-          this.targetRotation = randomBetween(-wander.rotateRange, wander.rotateRange);
-          this.nextRotationTargetAt =
-            timestamp +
-            wander.rotationIntervalMinMs +
-            Math.random() * (wander.rotationIntervalMaxMs - wander.rotationIntervalMinMs);
-        }
-
-        step(timestamp, delta, elapsed) {
-          if (!this.element) {
-            return;
-          }
-
-          if (!this.nextPositionTargetAt || timestamp >= this.nextPositionTargetAt) {
-            this.choosePositionTarget(timestamp);
-          }
-
-          if (!this.nextRotationTargetAt || timestamp >= this.nextRotationTargetAt) {
-            this.chooseRotationTarget(timestamp);
-          }
-
-          const positionBlend = 1 - Math.exp(-delta / this.profile.blend.positionMs);
-          const rotationBlend = 1 - Math.exp(-delta / this.profile.blend.rotationMs);
-          const driftX = getFloatDrift(
-            elapsed + this.offsets.time,
-            this.profile.drift.x,
-            this.offsets.x
-          );
-          const driftY = getFloatDrift(
-            elapsed + 420 + this.offsets.time,
-            this.profile.drift.y,
-            this.offsets.y
-          );
-          const driftRotation = getFloatDrift(
-            elapsed + 930 + this.offsets.time,
-            this.profile.drift.rotate,
-            this.offsets.rotate
-          );
-
-          this.currentX += (this.targetX - this.currentX) * positionBlend;
-          this.currentY += (this.targetY - this.currentY) * positionBlend;
-          this.currentRotation += (this.targetRotation - this.currentRotation) * rotationBlend;
-
-          this.applyPose(
-            this.currentX + driftX,
-            this.currentY + driftY,
-            this.currentRotation + driftRotation
-          );
-        }
-      }
-
-      function getFloatDrift(elapsed, axisProfile, secondaryOffset = 0) {
-        const primaryWave = Math.sin(elapsed / axisProfile.primaryPeriodMs) * axisProfile.primaryAmplitude;
-        const secondaryWave =
-          Math.cos(elapsed / axisProfile.secondaryPeriodMs + secondaryOffset) * axisProfile.secondaryAmplitude;
-
-        return primaryWave + secondaryWave;
-      }
-
-      function randomBetween(min, max) {
-        return min + Math.random() * (max - min);
-      }
-
-      function chooseRandom(list) {
-        return list[Math.floor(Math.random() * list.length)] || null;
       }
 
       const introFloatTargets = [
-        new FloatingMotionTarget(introTitle, setIntroTitlePose, TITLE_FLOAT_PROFILE, {
-          rotate: 0.15,
-          x: 0.3,
-          y: 0.9,
-          time: 180
+        Object.freeze({
+          applyPose: setIntroTitlePose,
+          element: introTitle,
+          orbitPhase: 0.45,
+          profile: TITLE_FLOAT_PROFILE,
+          rotationPhase: 1.1
         }),
-        new FloatingMotionTarget(introAstronaut, setAstronautPose, ASTRONAUT_FLOAT_PROFILE, {
-          rotate: 0.35,
-          x: 0.65,
-          y: 1.15,
-          time: 0
+        Object.freeze({
+          applyPose: setAstronautPose,
+          element: introAstronaut,
+          orbitPhase: 2.05,
+          profile: ASTRONAUT_FLOAT_PROFILE,
+          rotationPhase: 0.35
         })
       ];
+
+      function resetIntroFloat() {
+        introFloatTargets.forEach((target) => {
+          target.applyPose(0, 0, 0);
+        });
+      }
+
+      function applyIntroFloatTarget(target, elapsed) {
+        if (!target.element) {
+          return;
+        }
+
+        const orbitAngle = ((elapsed / target.profile.orbitPeriodMs) * Math.PI * 2) + target.orbitPhase;
+        const rotationAngle =
+          ((elapsed / target.profile.rotationPeriodMs) * Math.PI * 2) + target.rotationPhase;
+
+        target.applyPose(
+          Math.cos(orbitAngle) * target.profile.xRadius,
+          Math.sin(orbitAngle) * target.profile.yRadius,
+          Math.sin(rotationAngle) * target.profile.rotationAmplitude
+        );
+      }
 
       function stepIntroFloat(timestamp) {
         if (introFloatTargets.every((target) => !target.element)) {
@@ -1096,149 +729,36 @@
 
         if (prefersReducedMotion.matches) {
           introFloatFrame = 0;
-          introFloatLastTime = 0;
           introFloatStartTime = 0;
-          introFloatTargets.forEach((target) => target.reset());
+          resetIntroFloat();
           return;
-        }
-
-        if (!introFloatLastTime) {
-          introFloatLastTime = timestamp;
         }
 
         if (!introFloatStartTime) {
           introFloatStartTime = timestamp;
         }
 
-        const delta = Math.min(timestamp - introFloatLastTime, 40);
         const elapsed = timestamp - introFloatStartTime;
-        introFloatLastTime = timestamp;
 
-        introFloatTargets.forEach((target) => target.step(timestamp, delta, elapsed));
+        introFloatTargets.forEach((target) => applyIntroFloatTarget(target, elapsed));
         introFloatFrame = window.requestAnimationFrame(stepIntroFloat);
       }
 
       function startIntroFloat() {
         window.cancelAnimationFrame(introFloatFrame);
         introFloatFrame = 0;
-        introFloatLastTime = 0;
         introFloatStartTime = 0;
-        introFloatTargets.forEach((target) => target.reset());
+        resetIntroFloat();
 
         if (introFloatTargets.every((target) => !target.element) || prefersReducedMotion.matches) {
           return;
         }
 
-        window.requestAnimationFrame(() => {
-          introFloatFrame = window.requestAnimationFrame(stepIntroFloat);
-        });
-      }
-
-      function clearShootingStarTimer(starEl) {
-        const timerId = shootingStarTimers.get(starEl);
-
-        if (!timerId) {
-          return;
-        }
-
-        window.clearTimeout(timerId);
-        shootingStarTimers.delete(starEl);
-      }
-
-      function configureShootingStar(starEl) {
-        const directionPool = chooseRandom(SHOOTING_STAR_PROFILE.directionPools);
-
-        if (!directionPool) {
-          return;
-        }
-
-        const angleDeg = randomBetween(directionPool.angleMinDeg, directionPool.angleMaxDeg);
-        const travelVmax = randomBetween(
-          SHOOTING_STAR_PROFILE.travelMinVmax,
-          SHOOTING_STAR_PROFILE.travelMaxVmax
-        );
-        const angleRad = (angleDeg * Math.PI) / 180;
-        const distanceX = Math.cos(angleRad) * travelVmax;
-        const distanceY = Math.sin(angleRad) * travelVmax;
-
-        starEl.style.top = `${randomBetween(directionPool.topMin, directionPool.topMax).toFixed(1)}%`;
-        starEl.style.left = `${randomBetween(directionPool.leftMin, directionPool.leftMax).toFixed(1)}%`;
-        starEl.style.setProperty("--space-shooting-angle", `${angleDeg.toFixed(1)}deg`);
-        starEl.style.setProperty("--space-shooting-distance-x", `${distanceX.toFixed(2)}vmax`);
-        starEl.style.setProperty("--space-shooting-distance-y", `${distanceY.toFixed(2)}vmax`);
-        starEl.style.setProperty(
-          "--space-shooting-duration",
-          `${Math.round(randomBetween(SHOOTING_STAR_PROFILE.durationMinMs, SHOOTING_STAR_PROFILE.durationMaxMs))}ms`
-        );
-        starEl.style.setProperty(
-          "--space-shooting-length",
-          `${randomBetween(SHOOTING_STAR_PROFILE.lengthMinRem, SHOOTING_STAR_PROFILE.lengthMaxRem).toFixed(2)}rem`
-        );
-      }
-
-      function scheduleShootingStar(
-        starEl,
-        delayMinMs = SHOOTING_STAR_PROFILE.delayMinMs,
-        delayMaxMs = SHOOTING_STAR_PROFILE.delayMaxMs
-      ) {
-        clearShootingStarTimer(starEl);
-
-        if (!starEl || prefersReducedMotion.matches) {
-          return;
-        }
-
-        const delayMs = Math.round(randomBetween(delayMinMs, delayMaxMs));
-        const timerId = window.setTimeout(() => {
-          launchShootingStar(starEl);
-        }, delayMs);
-
-        shootingStarTimers.set(starEl, timerId);
-      }
-
-      function launchShootingStar(starEl) {
-        if (!starEl || prefersReducedMotion.matches) {
-          return;
-        }
-
-        clearShootingStarTimer(starEl);
-        configureShootingStar(starEl);
-        starEl.classList.remove("is-active");
-        void starEl.offsetWidth;
-        starEl.classList.add("is-active");
-      }
-
-      function stopShootingStars() {
-        shootingStarEls.forEach((starEl) => {
-          clearShootingStarTimer(starEl);
-          starEl.classList.remove("is-active");
-        });
-      }
-
-      function startShootingStars() {
-        stopShootingStars();
-
-        if (prefersReducedMotion.matches) {
-          return;
-        }
-
-        shootingStarEls.forEach((starEl, index) => {
-          scheduleShootingStar(
-            starEl,
-            SHOOTING_STAR_PROFILE.initialDelayMinMs + index * 420,
-            SHOOTING_STAR_PROFILE.initialDelayMaxMs + index * 980
-          );
-        });
+        introFloatFrame = window.requestAnimationFrame(stepIntroFloat);
       }
 
       function handleMotionPreferenceChange() {
         startIntroFloat();
-
-        if (prefersReducedMotion.matches) {
-          stopShootingStars();
-          return;
-        }
-
-        startShootingStars();
       }
 
       function setGuestCredentials(credentials) {
@@ -1435,12 +955,6 @@
 
       form.addEventListener("submit", handleLogin);
       guestCreateButton.addEventListener("click", handleGuestCreate);
-      shootingStarEls.forEach((starEl) => {
-        starEl.addEventListener("animationend", () => {
-          starEl.classList.remove("is-active");
-          scheduleShootingStar(starEl);
-        });
-      });
       usernameInput.addEventListener("focus", () => {
         if (usernameInput.readOnly) {
           usernameInput.select();
@@ -1457,7 +971,6 @@
         prefersReducedMotion.addListener(handleMotionPreferenceChange);
       }
       syncButtonState(false);
-      startShootingStars();
       if (introAstronaut && !introAstronaut.complete) {
         introAstronaut.addEventListener("load", startIntroFloat, { once: true });
       } else {

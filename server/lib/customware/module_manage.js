@@ -5,8 +5,9 @@ import path from "node:path";
 import { cloneGitRepository, createGitClient } from "../git/client_create.js";
 import { sanitizeRemoteUrl } from "../git/shared.js";
 import { createAppAccessController, createHttpError, toAppRelativePath } from "./file_access.js";
-import { normalizeMaxLayer } from "./layer_limit.js";
+import { getLayerOrder, normalizeMaxLayer } from "./layer_limit.js";
 import {
+  normalizeEntityId,
   normalizeAppProjectPath,
   parseModuleDirectoryRequestPath,
   parseProjectModuleDirectoryPath
@@ -15,6 +16,9 @@ import { collectAccessibleModuleEntries, createEmptyGroupIndex } from "./overrid
 
 const DEFAULT_REMOTE = "origin";
 const DEFAULT_REMOTE_FETCH = "+refs/heads/*:refs/remotes/origin/*";
+const DEFAULT_MODULE_LIST_AREA = "l2_self";
+const MODULE_LIST_AREAS = new Set(["l1", "l2_self", "l2_user", "l2_users"]);
+const GIT_INFO_CONCURRENCY = 8;
 
 function stripTrailingSlash(value) {
   const text = String(value || "");
@@ -58,6 +62,205 @@ function createModulePathError(value) {
     `Expected a module root path under L1/<group>/mod/<author>/<repo>/ or L2/<user>/mod/<author>/<repo>/: ${String(value || "")}`,
     400
   );
+}
+
+function normalizeModuleListArea(value) {
+  const normalizedArea = String(value || "").trim().toLowerCase();
+
+  if (!normalizedArea) {
+    return DEFAULT_MODULE_LIST_AREA;
+  }
+
+  if (!MODULE_LIST_AREAS.has(normalizedArea)) {
+    throw createHttpError(`Unsupported module list area: ${normalizedArea}`, 400);
+  }
+
+  return normalizedArea;
+}
+
+function normalizeModuleOwnerId(value) {
+  const normalizedOwnerId = normalizeEntityId(value);
+  return normalizedOwnerId || "";
+}
+
+function normalizeModuleSearch(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+async function mapWithConcurrencyLimit(items, limit, mapper) {
+  const inputItems = Array.isArray(items) ? items : [];
+  const normalizedLimit = Math.max(1, Number(limit) || 1);
+  const results = new Array(inputItems.length);
+  let nextIndex = 0;
+
+  const workers = Array.from(
+    { length: Math.min(normalizedLimit, inputItems.length) },
+    async () => {
+      while (nextIndex < inputItems.length) {
+        const currentIndex = nextIndex;
+        nextIndex += 1;
+        results[currentIndex] = await mapper(inputItems[currentIndex], currentIndex);
+      }
+    }
+  );
+
+  await Promise.all(workers);
+  return results;
+}
+
+function matchesModuleSearch(modulePathInfo, normalizedSearch) {
+  if (!normalizedSearch) {
+    return true;
+  }
+
+  const authorId = String(modulePathInfo?.authorId || "").toLowerCase();
+  const repositoryId = String(modulePathInfo?.repositoryId || "").toLowerCase();
+  const moduleId = `${authorId}/${repositoryId}`;
+
+  return (
+    authorId.includes(normalizedSearch) ||
+    repositoryId.includes(normalizedSearch) ||
+    moduleId.includes(normalizedSearch)
+  );
+}
+
+function compareModuleListEntries(left, right) {
+  const leftModuleId = `${left.authorId}/${left.repositoryId}`;
+  const rightModuleId = `${right.authorId}/${right.repositoryId}`;
+  const moduleCompare = leftModuleId.localeCompare(rightModuleId);
+
+  if (moduleCompare !== 0) {
+    return moduleCompare;
+  }
+
+  const layerCompare = Number(getLayerOrder(left.layer)) - Number(getLayerOrder(right.layer));
+
+  if (layerCompare !== 0) {
+    return layerCompare;
+  }
+
+  const ownerTypeCompare = String(left.ownerType || "").localeCompare(String(right.ownerType || ""));
+
+  if (ownerTypeCompare !== 0) {
+    return ownerTypeCompare;
+  }
+
+  const ownerCompare = String(left.ownerId || "").localeCompare(String(right.ownerId || ""));
+
+  if (ownerCompare !== 0) {
+    return ownerCompare;
+  }
+
+  return String(left.projectPath || "").localeCompare(String(right.projectPath || ""));
+}
+
+function collectVisibleModuleDirectoryEntries(options = {}) {
+  if (!options.watchdog || typeof options.watchdog.getPaths !== "function") {
+    return [];
+  }
+
+  const accessController = createAppAccessController({
+    groupIndex: getGroupIndex(options.watchdog),
+    username: options.username
+  });
+  const normalizedSearch = normalizeModuleSearch(options.search);
+  const normalizedOwnerId = normalizeModuleOwnerId(options.ownerId);
+  const includeOtherUsers = options.includeOtherUsers === true;
+  const maxLayer = normalizeMaxLayer(options.maxLayer);
+  const area = options.area ? normalizeModuleListArea(options.area) : "";
+  const targetsOtherUser = normalizedOwnerId && normalizedOwnerId !== accessController.username;
+  const requiresAdmin =
+    area === "l2_users" ||
+    includeOtherUsers ||
+    targetsOtherUser ||
+    (area === "l2_user" && normalizedOwnerId !== accessController.username);
+
+  if (requiresAdmin && !accessController.isAdmin) {
+    throw createHttpError("Admin access required.", 403);
+  }
+
+  if (area === "l2_user" && !normalizedOwnerId) {
+    throw createHttpError("Module list area l2_user requires ownerId.", 400);
+  }
+
+  return [...options.watchdog.getPaths()]
+    .map((projectPath) => parseProjectModuleDirectoryPath(projectPath))
+    .filter(Boolean)
+    .filter((entry) => entry.layer !== "L0")
+    .filter((entry) => {
+      const layerOrder = getLayerOrder(entry.layer);
+      return layerOrder !== null && layerOrder <= maxLayer;
+    })
+    .filter((entry) => matchesModuleSearch(entry, normalizedSearch))
+    .map((entry) => {
+      const canRead = accessController.canReadProjectPath(entry.projectPath);
+      const canWrite = accessController.canWriteProjectPath(entry.projectPath);
+
+      return {
+        ...entry,
+        canRead,
+        canWrite
+      };
+    })
+    .filter((entry) => entry.canRead || entry.canWrite)
+    .filter((entry) => {
+      if (area === "l1") {
+        return entry.layer === "L1";
+      }
+
+      if (area === "l2_self") {
+        return entry.layer === "L2" && entry.ownerId === accessController.username;
+      }
+
+      if (area === "l2_user") {
+        return entry.layer === "L2" && entry.ownerId === normalizedOwnerId;
+      }
+
+      if (area === "l2_users") {
+        return entry.layer === "L2";
+      }
+
+      if (entry.layer === "L2") {
+        if (normalizedOwnerId) {
+          return entry.ownerId === normalizedOwnerId;
+        }
+
+        if (includeOtherUsers) {
+          return true;
+        }
+
+        return entry.ownerId === accessController.username;
+      }
+
+      return true;
+    })
+    .sort(compareModuleListEntries);
+}
+
+function createModuleListItemId(entry, options = {}) {
+  const area = String(options.area || "");
+
+  if (options.aggregated === true) {
+    return `${area}:aggregate:${entry.layer}:${entry.requestPath}`;
+  }
+
+  return `${area}:${entry.layer}:${entry.ownerType}:${entry.ownerId}:${entry.requestPath}`;
+}
+
+function compareResolvedModuleLocations(left, right) {
+  if (left.rank !== null && right.rank !== null && left.rank !== right.rank) {
+    return left.rank - right.rank;
+  }
+
+  if (left.rank !== null && right.rank === null) {
+    return -1;
+  }
+
+  if (left.rank === null && right.rank !== null) {
+    return 1;
+  }
+
+  return compareModuleListEntries(left, right);
 }
 
 function normalizeModuleTargetPath(inputPath, options = {}) {
@@ -300,20 +503,37 @@ async function updateExistingPath(targetPathInfo, options = {}) {
 }
 
 async function resolveInstalledLocations(options = {}) {
-  if (!options.watchdog || typeof options.watchdog.getPaths !== "function") {
-    return [];
-  }
-
-  const entries = collectAccessibleModuleEntries(options.watchdog.getPaths(), {
+  const visibleEntries = collectVisibleModuleDirectoryEntries({
+    includeOtherUsers: options.includeOtherUsers === true,
+    groupIndex: getGroupIndex(options.watchdog),
+    maxLayer: normalizeMaxLayer(options.maxLayer),
+    ownerId: options.ownerId,
+    username: options.username
+  }).filter((entry) => entry.requestPath === options.requestPath);
+  const selectedEntries = collectAccessibleModuleEntries(options.watchdog?.getPaths?.() || [], {
     groupIndex: getGroupIndex(options.watchdog),
     maxLayer: normalizeMaxLayer(options.maxLayer),
     parseProjectPath: parseProjectModuleDirectoryPath,
     username: options.username
   }).filter((entry) => entry.requestPath === options.requestPath);
+  const selectedEntryMap = new Map(
+    selectedEntries.map((entry, index) => [
+      entry.projectPath,
+      {
+        rank: entry.rank,
+        selected: index === selectedEntries.length - 1
+      }
+    ])
+  );
 
-  return Promise.all(
-    entries.map(async (entry, index) => ({
+  const locations = await mapWithConcurrencyLimit(
+    visibleEntries,
+    GIT_INFO_CONCURRENCY,
+    async (entry) => ({
       authorId: entry.authorId,
+      canRead: entry.canRead,
+      canWrite: entry.canWrite,
+      effective: selectedEntryMap.has(entry.projectPath),
       git: await readModuleGitInfo({
         absolutePath: createAbsolutePath(options.projectRoot, entry.projectPath)
       }),
@@ -321,18 +541,27 @@ async function resolveInstalledLocations(options = {}) {
       ownerId: entry.ownerId,
       ownerType: entry.ownerType,
       path: toAppRelativePath(entry.projectPath),
-      rank: entry.rank,
+      rank: selectedEntryMap.get(entry.projectPath)?.rank ?? null,
       requestPath: entry.requestPath,
       repositoryId: entry.repositoryId,
-      selected: index === entries.length - 1
-    }))
+      selected: selectedEntryMap.get(entry.projectPath)?.selected === true
+    })
   );
+
+  return locations.sort(compareResolvedModuleLocations);
 }
 
 async function readModuleInfo(options = {}) {
   const moduleReference = normalizeModuleReference(options.path || options.modulePath || options.requestPath || "");
+  const requestedOwnerId =
+    options.ownerId ||
+    (moduleReference.layer === "L2" && moduleReference.ownerType === "user"
+      ? moduleReference.ownerId
+      : "");
   const locations = await resolveInstalledLocations({
+    includeOtherUsers: options.includeOtherUsers === true,
     maxLayer: options.maxLayer,
+    ownerId: requestedOwnerId,
     projectRoot: options.projectRoot,
     requestPath: moduleReference.requestPath,
     username: options.username,
@@ -390,33 +619,98 @@ async function installModule(options = {}) {
 }
 
 async function listInstalledModules(options = {}) {
-  if (!options.watchdog || typeof options.watchdog.getPaths !== "function") {
-    return [];
-  }
+  const area = normalizeModuleListArea(options.area);
 
   // Always use maxLayer 2 so L1 and L2 modules are visible regardless of the
   // request context (admin requests run with maxLayer=0 for resolution, but the
   // intent here is to list what is actually installed).
-  const entries = collectAccessibleModuleEntries(options.watchdog.getPaths(), {
-    groupIndex: getGroupIndex(options.watchdog),
+  const entries = collectVisibleModuleDirectoryEntries({
+    area,
     maxLayer: 2,
-    parseProjectPath: parseProjectModuleDirectoryPath,
-    username: options.username
-  }).filter((entry) => entry.layer !== "L0");
+    ownerId: options.ownerId,
+    search: options.search,
+    username: options.username,
+    watchdog: options.watchdog
+  });
 
-  return Promise.all(
-    entries.map(async (entry) => ({
+  if (area === "l2_users") {
+    const groupedEntries = new Map();
+
+    entries.forEach((entry) => {
+      const groupKey = entry.requestPath;
+      const groupedEntry =
+        groupedEntries.get(groupKey) || {
+          authorId: entry.authorId,
+          canRead: false,
+          entries: [],
+          layer: entry.layer,
+          ownerIds: new Set(),
+          repositoryId: entry.repositoryId,
+          requestPath: entry.requestPath
+        };
+
+      groupedEntry.canRead ||= entry.canRead;
+      groupedEntry.entries.push(entry);
+      groupedEntry.ownerIds.add(entry.ownerId);
+      groupedEntries.set(groupKey, groupedEntry);
+    });
+
+    return mapWithConcurrencyLimit(
+      [...groupedEntries.values()].sort((left, right) =>
+        `${left.authorId}/${left.repositoryId}`.localeCompare(`${right.authorId}/${right.repositoryId}`)
+      ),
+      GIT_INFO_CONCURRENCY,
+      async (groupedEntry) => {
+        const representativeEntry = groupedEntry.entries[0];
+        const ownerPreview = [...groupedEntry.ownerIds].sort((left, right) => left.localeCompare(right)).slice(0, 3);
+
+        return {
+          aggregated: true,
+          authorId: groupedEntry.authorId,
+          canRead: groupedEntry.canRead,
+          canWrite: false,
+          git: await readModuleGitInfo({
+            absolutePath: createAbsolutePath(options.projectRoot, representativeEntry.projectPath)
+          }),
+          id: createModuleListItemId(groupedEntry, {
+            aggregated: true,
+            area
+          }),
+          layer: groupedEntry.layer,
+          ownerCount: groupedEntry.ownerIds.size,
+          ownerId: "",
+          ownerPreview,
+          ownerType: "user-aggregate",
+          path: "",
+          requestPath: groupedEntry.requestPath,
+          repositoryId: groupedEntry.repositoryId
+        };
+      }
+    );
+  }
+
+  return mapWithConcurrencyLimit(
+    entries,
+    GIT_INFO_CONCURRENCY,
+    async (entry) => ({
+      aggregated: false,
       authorId: entry.authorId,
+      canRead: entry.canRead,
+      canWrite: entry.canWrite,
       git: await readModuleGitInfo({
         absolutePath: createAbsolutePath(options.projectRoot, entry.projectPath)
+      }),
+      id: createModuleListItemId(entry, {
+        area
       }),
       layer: entry.layer,
       ownerId: entry.ownerId,
       ownerType: entry.ownerType,
+      ownerCount: 1,
       path: toAppRelativePath(entry.projectPath),
       requestPath: entry.requestPath,
       repositoryId: entry.repositoryId
-    }))
+    })
   );
 }
 

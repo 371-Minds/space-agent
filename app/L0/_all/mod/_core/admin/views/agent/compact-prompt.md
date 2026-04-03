@@ -8,7 +8,11 @@ Preserve the important parts:
 - the current objective
 - key constraints, decisions, and assumptions
 - important file paths, APIs, commands, errors, outputs, and state
+- the most recent turns, especially the latest user instruction, assistant action, and execution result
 - unresolved work and the most useful next step when it is clear
+
+Prefer recent context over older detail when you need to compress.
+Make the ending of the summary clear enough that a later turn can see what the agent was doing last and how to continue.
 
 Remove what does not help future turns:
 - repetition

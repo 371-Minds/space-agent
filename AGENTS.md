@@ -72,7 +72,7 @@ Project concepts:
 - modules are the browser delivery unit for code, markup, styles, and assets
 - browser modules are namespaced as `mod/<author>/<repo>/...`
 - frontend extensibility is a core runtime primitive, not an add-on; framework bootstrap installs `space.extend` first, and the browser runtime grows by loading modules that expose extension points which are then extended by further modules
-- frontend visual guidance, semantic color palette, and shared backdrop primitives are owned by `/app/AGENTS.md` under `## Visual Guidance`; agents making UI changes should read that section and use `app/L0/_all/mod/_core/framework/css/colors.css` plus `app/L0/_all/mod/_core/framework/css/visual.css`
+- frontend visual guidance, semantic color palette, and shared backdrop primitives are owned by `/app/AGENTS.md` under `## Visual Guidance`; agents making UI changes should read that section and use `app/L0/_all/mod/_core/framework/css/colors.css` plus the shared assets under `app/L0/_all/mod/_core/visual/`
 - the layered browser model is `app/L0` firmware, `app/L1` group customware, and `app/L2` user customware
 - `app/L1` and `app/L2` are transient runtime state and are gitignored; do not treat them as durable repo-owned sample content
 - `app/L2/<username>/user.yaml` stores user metadata such as `full_name`; auth state lives under `app/L2/<username>/meta/`, where `password.json` stores the password verifier and `logins.json` stores active session codes
@@ -80,6 +80,7 @@ Project concepts:
 - the `/admin` frontend clamps module and extension resolution to `L0` with `maxLayer=0` so admin UI assets stay firmware-backed even though app file APIs still operate on normal `L1` and `L2` paths
 - the browser authenticates through the server, uses a server-issued session cookie for protected API and file access, and clears that session through `/logout`
 - framework composition is rooted at `/mod/_core/framework/js/initFw.js`, which initializes the `space` runtime for the current browser context and imports the extension system before other framework modules so later modules can extend the runtime tree deterministically
+- the main app shell now mounts `/mod/_core/router/view.html` at `html/body/start`; that router owns `space.router`, Alpine `$router`, the default `#/dashboard` route, and hash-based view resolution into module `view.html` files
 - app file APIs now operate on app-rooted paths such as `L2/alice/user.yaml` or `/app/L2/alice/user.yaml`, not on `/mod/...` cascade paths; `file_read`, `file_write`, `file_delete`, and `file_list` also accept `~` or `~/...` as shorthand for the authenticated user's `L2/<username>/...` path; `file_read` plus `file_write` accept either single-file input or composed batch `files` input; `file_delete` accepts single-path input or composed batch `paths` input; and `file_write` creates directories when the target path ends with `/`
 - read permissions are: a user can read their own `L2/<username>/`, and can read `L0/<group>/` and `L1/<group>/` for groups they belong to
 - write permissions are: a user can write their own `L2/<username>/`; a user can write `L1/<group>/` only when they manage that group directly or through a managing group include chain; members of `_admin` can write any `L1/` and `L2/` path; nobody writes `L0/`

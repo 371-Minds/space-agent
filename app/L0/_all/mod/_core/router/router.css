@@ -1,0 +1,75 @@
+html,
+body {
+  height: 100%;
+  min-height: 100%;
+}
+
+body.app-page-router {
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  font: 15px/1.5 "SF Pro Text", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+body.app-page-router > div[x-data] {
+  height: 100%;
+}
+
+.router-shell {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  isolation: isolate;
+}
+
+.router-shell-content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+}
+
+.router-stage {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.router-stage-inner {
+  display: grid;
+  width: min(100%, 84rem);
+  min-height: 100%;
+  margin: 0 auto;
+  padding: clamp(20px, 3vw, 34px) clamp(16px, 3vw, 32px) clamp(26px, 4vw, 40px);
+}
+
+.router-route-frame {
+  display: grid;
+  min-height: 100%;
+  min-width: 0;
+}
+
+.router-route-outlet,
+.router-route-mount {
+  min-width: 0;
+  min-height: 100%;
+}
+
+.router-route-state {
+  align-self: start;
+}
+
+.router-overlay-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.router-overlay-layer > * {
+  pointer-events: auto;
+}

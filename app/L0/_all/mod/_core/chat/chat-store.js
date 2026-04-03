@@ -237,6 +237,7 @@ const model = {
   executionOutputOverrides: Object.create(null),
   history: loadChatHistory().map((message) => normalizeStoredMessage(message)),
   isLoadingDefaultSystemPrompt: false,
+  isPageMenuOpen: false,
   isSending: false,
   promptHistoryMessages: [],
   promptHistoryMode: "text",
@@ -353,6 +354,7 @@ const model = {
       autoResizeTextarea(this.refs.input);
     }
 
+    this.closePageMenu();
     this.render();
     this.focusInput();
   },
@@ -375,6 +377,7 @@ const model = {
 
     document.body.style.removeProperty("--chat-footer-clearance");
     document.body.style.removeProperty("--chat-footer-blur-height");
+    this.closePageMenu();
 
     this.refs = {
       composerWrap: null,
@@ -516,6 +519,35 @@ const model = {
 
   handleDraftInput(event) {
     this.syncDraft(event.target.value);
+  },
+
+  closePageMenu() {
+    this.isPageMenuOpen = false;
+  },
+
+  togglePageMenu() {
+    this.isPageMenuOpen = !this.isPageMenuOpen;
+  },
+
+  navigateTo(path) {
+    const targetPath = typeof path === "string" ? path.trim() : "";
+
+    if (!targetPath) {
+      return;
+    }
+
+    this.closePageMenu();
+
+    try {
+      if (window.top?.location) {
+        window.top.location.assign(targetPath);
+        return;
+      }
+    } catch {
+      // Fall back to the current frame when top-window navigation is unavailable.
+    }
+
+    window.location.assign(targetPath);
   },
 
   openAttachmentPicker() {

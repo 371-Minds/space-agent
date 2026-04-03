@@ -1,0 +1,91 @@
+:root {
+  --space-button-radius: 999px;
+  --space-button-gap: 0.5rem;
+  --space-button-padding-y: 0.72rem;
+  --space-button-padding-x: 1.15rem;
+  --space-button-focus-ring: rgba(148, 188, 255, 0.14);
+  --space-button-secondary-border: var(--color-border-soft);
+  --space-button-secondary-border-hover: var(--color-border-strong);
+  --space-button-secondary-bg: rgba(18, 29, 51, 0.68);
+  --space-button-secondary-bg-hover: rgba(24, 37, 64, 0.78);
+  --space-button-danger-border: rgba(255, 141, 152, 0.18);
+  --space-button-danger-border-hover: rgba(255, 141, 152, 0.28);
+  --space-button-danger-bg: rgba(255, 141, 152, 0.1);
+  --space-button-danger-bg-hover: rgba(255, 141, 152, 0.16);
+  --space-button-primary-bg: linear-gradient(
+    135deg,
+    var(--color-accent-primary),
+    var(--color-accent-primary-strong)
+  );
+  --space-button-primary-bg-hover: linear-gradient(135deg, #8fe6ff, #a8c9ff);
+  --space-button-primary-shadow: 0 16px 34px rgba(125, 220, 255, 0.18);
+}
+
+.primary-button,
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-button-gap);
+  min-height: 2.7rem;
+  padding: var(--space-button-padding-y) var(--space-button-padding-x);
+  border: 1px solid transparent;
+  border-radius: var(--space-button-radius);
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  line-height: 1.1;
+  text-decoration: none;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.primary-button {
+  color: var(--color-accent-ink);
+  background: var(--space-button-primary-bg);
+  box-shadow: var(--space-button-primary-shadow);
+}
+
+.primary-button:hover:not(:disabled) {
+  background: var(--space-button-primary-bg-hover);
+}
+
+.secondary-button {
+  color: var(--color-text);
+  border-color: var(--space-button-secondary-border);
+  background: var(--space-button-secondary-bg);
+}
+
+.secondary-button:hover:not(:disabled) {
+  border-color: var(--space-button-secondary-border-hover);
+  background: var(--space-button-secondary-bg-hover);
+}
+
+.secondary-button.danger {
+  color: var(--color-danger);
+  border-color: var(--space-button-danger-border);
+  background: var(--space-button-danger-bg);
+}
+
+.secondary-button.danger:hover:not(:disabled) {
+  border-color: var(--space-button-danger-border-hover);
+  background: var(--space-button-danger-bg-hover);
+}
+
+.primary-button:focus-visible,
+.secondary-button:focus-visible,
+.assistant-message-action:focus-visible,
+.composer-attachment:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--space-button-focus-ring);
+}
+
+.primary-button:disabled,
+.secondary-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

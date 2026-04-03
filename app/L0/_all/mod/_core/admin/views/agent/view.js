@@ -971,7 +971,7 @@ export function renderMessages(thread, history, options = {}) {
 
     const astronaut = document.createElement("img");
     astronaut.className = "chat-empty-astronaut";
-    astronaut.src = "/pages/res/astronaut_no_bg.webp";
+    astronaut.src = "/mod/_core/admin/res/astronaut_no_bg.webp";
     astronaut.alt = "";
     astronaut.setAttribute("aria-hidden", "true");
 

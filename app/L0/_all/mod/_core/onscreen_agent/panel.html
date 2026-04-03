@@ -1,0 +1,329 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="/mod/_core/visual/index.css" />
+    <link rel="stylesheet" href="/mod/_core/onscreen_agent/onscreen-agent.css" />
+    <script type="module" src="/mod/_core/onscreen_agent/store.js"></script>
+  </head>
+  <body>
+    <div x-data class="onscreen-agent-root agent-thread-surface">
+      <template x-if="$store.onscreenAgent">
+        <section
+          class="onscreen-agent-shell"
+          :class="{
+            'is-collapsed': $store.onscreenAgent.isCollapsed,
+            'is-history-below': $store.onscreenAgent.isHistoryBelow,
+            'is-right': $store.onscreenAgent.isDockedRight
+          }"
+          x-cloak
+          :style="$store.onscreenAgent.positionStyle"
+          x-init="$nextTick(() => $store.onscreenAgent.mount({ attachmentInput: $refs.attachmentInput, historyDialog: $refs.historyDialog, input: $refs.input, rawDialog: $refs.rawDialog, scroller: $refs.scroller, settingsDialog: $refs.settingsDialog, thread: $refs.thread }))"
+          x-destroy="$store.onscreenAgent.unmount()"
+        >
+          <div class="onscreen-agent-cluster">
+            <button
+              type="button"
+              class="onscreen-agent-avatar-button"
+              :aria-expanded="String(!$store.onscreenAgent.isCollapsed)"
+              aria-label="Drag or collapse onscreen agent"
+              @pointerdown="$store.onscreenAgent.handleAgentPointerDown($event)"
+            >
+              <span class="onscreen-agent-avatar-orbit">
+                <span class="onscreen-agent-avatar-flip">
+                  <img
+                    class="onscreen-agent-avatar-image"
+                    src="/mod/_core/onscreen_agent/res/astronaut_no_bg.webp"
+                    alt=""
+                    aria-hidden="true"
+                    draggable="false"
+                  />
+                </span>
+              </span>
+            </button>
+
+            <div class="onscreen-agent-body">
+              <div
+                class="onscreen-agent-history"
+                x-ref="scroller"
+                x-show="$store.onscreenAgent.shouldShowHistory"
+                x-transition.opacity.duration.120ms
+              >
+                <div class="chat-thread" x-ref="thread" data-chat-thread @click="$store.onscreenAgent.handleThreadClick($event)"></div>
+              </div>
+
+              <button
+                type="button"
+                class="onscreen-agent-collapse-bubble"
+                x-show="$store.onscreenAgent.isCollapsed"
+                x-transition.opacity.duration.100ms
+                @click="$store.onscreenAgent.expand()"
+                :aria-label="$store.onscreenAgent.isDockedRight ? 'Expand chat to the left' : 'Expand chat to the right'"
+              >
+                <x-icon x-text="$store.onscreenAgent.expandIcon"></x-icon>
+              </button>
+
+              <div
+                class="onscreen-agent-panel"
+                x-show="!$store.onscreenAgent.isCollapsed"
+                x-transition.opacity.duration.100ms
+              >
+                <form class="onscreen-agent-composer" @submit.prevent="$store.onscreenAgent.handleComposerPrimaryAction()">
+                  <input
+                    x-ref="attachmentInput"
+                    type="file"
+                    multiple
+                    class="composer-attachment-input"
+                    @change="$store.onscreenAgent.handleAttachmentInput($event)"
+                  />
+                  <textarea
+                    x-ref="input"
+                    name="message"
+                    rows="1"
+                    aria-label="Message onscreen agent"
+                    :placeholder="$store.onscreenAgent.composerPlaceholder"
+                    x-model="$store.onscreenAgent.draft"
+                    :disabled="$store.onscreenAgent.isComposerInputDisabled"
+                    @input="$store.onscreenAgent.handleDraftInput($event)"
+                    @keydown="$store.onscreenAgent.handleComposerKeydown($event)"
+                  ></textarea>
+                  <div class="onscreen-agent-composer-actions">
+                    <button
+                      type="button"
+                      class="onscreen-agent-inline-button onscreen-agent-send-button"
+                      :class="{
+                        'is-busy': $store.onscreenAgent.isPrimaryActionBusy,
+                        'is-stop': $store.onscreenAgent.isPrimaryActionStop
+                      }"
+                      :disabled="$store.onscreenAgent.isPrimaryActionDisabled"
+                      :aria-label="$store.onscreenAgent.primaryActionLabel"
+                      :title="$store.onscreenAgent.primaryActionLabel"
+                      @click="$store.onscreenAgent.handleComposerPrimaryAction()"
+                    >
+                      <x-icon x-text="$store.onscreenAgent.primaryActionIcon"></x-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="onscreen-agent-inline-button onscreen-agent-attach-button"
+                      :disabled="$store.onscreenAgent.isAttachmentPickerDisabled"
+                      @click="$store.onscreenAgent.openAttachmentPicker()"
+                      aria-label="Attach files"
+                      title="Attach files"
+                    >
+                      <x-icon>attach_file</x-icon>
+                    </button>
+                  </div>
+                </form>
+
+                <template x-if="$store.onscreenAgent.draftAttachments.length">
+                  <div class="composer-attachments" aria-label="Selected attachments">
+                    <template x-for="attachment in $store.onscreenAgent.draftAttachments" :key="attachment.id">
+                      <button
+                        type="button"
+                        class="composer-attachment"
+                        @click="$store.onscreenAgent.removeDraftAttachment(attachment.id)"
+                        :title="`Remove ${attachment.name}`"
+                      >
+                        <span class="composer-attachment-name" x-text="attachment.name"></span>
+                        <x-icon>close</x-icon>
+                      </button>
+                    </template>
+                  </div>
+                </template>
+
+                <div class="onscreen-agent-footer">
+                  <button
+                    type="button"
+                    class="chat-option onscreen-agent-llm-button"
+                    @click="$store.onscreenAgent.openSettingsDialog()"
+                    aria-label="Open chat settings"
+                    title="Open chat settings"
+                  >
+                    <span class="chat-option-value" x-text="$store.onscreenAgent.llmSummary"></span>
+                  </button>
+                  <div class="onscreen-agent-footer-meta">
+                    <span class="onscreen-agent-token-count" x-text="$store.onscreenAgent.historyTokenSummary"></span>
+                    <button
+                      type="button"
+                      class="onscreen-agent-footer-icon"
+                      :class="{ 'is-active': $store.onscreenAgent.isCompactingHistory }"
+                      :disabled="$store.onscreenAgent.isCompactDisabled"
+                      @click="$store.onscreenAgent.handleCompactClick()"
+                      aria-label="Compact context window"
+                      title="Compact context window"
+                    >
+                      <x-icon x-text="$store.onscreenAgent.compactButtonIcon"></x-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="onscreen-agent-footer-icon"
+                      @click="$store.onscreenAgent.openPromptHistoryDialog()"
+                      aria-label="Show context window"
+                      title="Show context window"
+                    >
+                      <x-icon>notes</x-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="onscreen-agent-footer-icon danger"
+                      :disabled="$store.onscreenAgent.isSending || $store.onscreenAgent.isLoadingDefaultSystemPrompt || $store.onscreenAgent.isCompactingHistory"
+                      @click="$store.onscreenAgent.handleClearClick()"
+                      aria-label="Reset chat"
+                      title="Reset chat"
+                    >
+                      <x-icon>restart_alt</x-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <template x-teleport="body">
+            <div class="space-dialog-layer">
+              <dialog class="chat-dialog" x-ref="settingsDialog" @cancel.prevent="$store.onscreenAgent.closeSettingsDialog()">
+                <form method="dialog" class="dialog-card" @submit.prevent="$store.onscreenAgent.saveSettingsFromDialog()">
+                  <header class="dialog-header">
+                    <div>
+                      <p class="page-eyebrow">Settings</p>
+                      <h2>Model, credentials, params, and instructions</h2>
+                    </div>
+                  </header>
+                  <label class="field">
+                    <span>Provider API Endpoint URL</span>
+                    <input type="url" x-model="$store.onscreenAgent.settingsDraft.apiEndpoint" />
+                  </label>
+                  <label class="field">
+                    <span>Model Name</span>
+                    <input type="text" x-model="$store.onscreenAgent.settingsDraft.model" />
+                  </label>
+                  <label class="field">
+                    <span>Max Tokens</span>
+                    <input type="number" min="1" step="1" inputmode="numeric" x-model="$store.onscreenAgent.settingsDraft.maxTokens" />
+                    <p class="field-note">
+                      Default <code>64000</code>. When prompt history exceeds this, compaction runs automatically before the next send.
+                    </p>
+                  </label>
+                  <label class="field">
+                    <span>API Key</span>
+                    <input type="password" x-model="$store.onscreenAgent.settingsDraft.apiKey" />
+                  </label>
+                  <label class="field">
+                    <span>Params</span>
+                    <textarea
+                      rows="6"
+                      spellcheck="false"
+                      placeholder="temperature:0.2"
+                      x-model="$store.onscreenAgent.settingsDraft.paramsText"
+                    ></textarea>
+                    <p class="field-note">
+                      YAML format. Example: <code>temperature:0.2</code>
+                    </p>
+                  </label>
+                  <label class="field">
+                    <span>Custom Instructions</span>
+                    <textarea
+                      rows="8"
+                      x-model="$store.onscreenAgent.systemPromptDraft"
+                    ></textarea>
+                    <p class="field-note">
+                      Appended after the fixed onscreen agent system prompt. Clear this field to use the default prompt only.
+                    </p>
+                  </label>
+                  <p class="dialog-note">
+                    These values and custom instructions are stored in <code>~/conf/onscreen-agent.yaml</code>.
+                  </p>
+                  <div class="dialog-actions">
+                    <button type="button" class="secondary-button" @click="$store.onscreenAgent.resetSettingsDraftToDefaults()">
+                      Defaults
+                    </button>
+                    <button type="button" class="secondary-button" @click="$store.onscreenAgent.closeSettingsDialog()">Cancel</button>
+                    <button type="submit" class="primary-button">Save Settings</button>
+                  </div>
+                </form>
+              </dialog>
+
+              <dialog class="chat-dialog" x-ref="rawDialog" @cancel.prevent="$store.onscreenAgent.closeRawDialog()">
+                <div class="dialog-card dialog-card-raw">
+                  <header class="dialog-header">
+                    <div>
+                      <p class="page-eyebrow">LLM Output</p>
+                      <h2 x-text="$store.onscreenAgent.rawOutputTitle"></h2>
+                    </div>
+                  </header>
+                  <div class="raw-output-frame">
+                    <pre class="raw-output" x-text="$store.onscreenAgent.rawOutputContent || '[No raw output available]'"></pre>
+                  </div>
+                  <div class="dialog-actions">
+                    <button type="button" class="secondary-button" @click="$store.onscreenAgent.closeRawDialog()">Close</button>
+                  </div>
+                </div>
+              </dialog>
+
+              <dialog class="chat-dialog" x-ref="historyDialog" @cancel.prevent="$store.onscreenAgent.closePromptHistoryDialog()">
+                <div class="dialog-card dialog-card-raw">
+                  <header class="dialog-header">
+                    <div>
+                      <p class="page-eyebrow">Context Window</p>
+                      <h2 x-text="$store.onscreenAgent.promptHistoryTitle"></h2>
+                    </div>
+                    <div class="dialog-header-actions">
+                      <div class="dialog-segmented-control" role="tablist" aria-label="Prompt history mode">
+                        <button
+                          type="button"
+                          class="secondary-button dialog-segmented-button"
+                          :class="{ 'is-active': $store.onscreenAgent.promptHistoryMode === 'text' }"
+                          @click="$store.onscreenAgent.setPromptHistoryMode('text')"
+                        >
+                          <x-icon>notes</x-icon>
+                          <span>Text</span>
+                        </button>
+                        <button
+                          type="button"
+                          class="secondary-button dialog-segmented-button"
+                          :class="{ 'is-active': $store.onscreenAgent.promptHistoryMode === 'json' }"
+                          @click="$store.onscreenAgent.setPromptHistoryMode('json')"
+                        >
+                          <x-icon>data_object</x-icon>
+                          <span>JSON</span>
+                        </button>
+                      </div>
+                    </div>
+                  </header>
+                  <div class="raw-output-frame">
+                    <template x-if="$store.onscreenAgent.promptHistoryMode === 'text'">
+                      <div class="prompt-history-list">
+                        <template x-if="!$store.onscreenAgent.promptHistorySections.length">
+                          <pre class="raw-output"></pre>
+                        </template>
+                        <template x-for="(section, index) in $store.onscreenAgent.promptHistorySections" :key="`${section.role}-${index}`">
+                          <section class="prompt-history-section">
+                            <div class="prompt-history-role" x-text="`${section.role} (${section.tokenCountLabel}):`"></div>
+                            <pre class="prompt-history-body" x-text="section.content"></pre>
+                          </section>
+                        </template>
+                      </div>
+                    </template>
+                    <template x-if="$store.onscreenAgent.promptHistoryMode === 'json'">
+                      <pre class="raw-output" x-text="$store.onscreenAgent.promptHistoryContent || '[]'"></pre>
+                    </template>
+                  </div>
+                  <div class="dialog-actions prompt-history-dialog-actions">
+                    <button
+                      type="button"
+                      class="secondary-button dialog-icon-button"
+                      title="Copy prompt history"
+                      aria-label="Copy prompt history"
+                      @click="$store.onscreenAgent.copyPromptHistory()"
+                    >
+                      <x-icon>content_copy</x-icon>
+                    </button>
+                    <button type="button" class="secondary-button" @click="$store.onscreenAgent.closePromptHistoryDialog()">Close</button>
+                  </div>
+                </div>
+              </dialog>
+            </div>
+          </template>
+        </section>
+      </template>
+    </div>
+  </body>
+</html>

@@ -1,6 +1,7 @@
 <html>
   <head>
     <link rel="stylesheet" href="/mod/_core/chat/chat.css" />
+    <link rel="stylesheet" href="/mod/_core/visual/index.css" />
     <script type="module" src="/mod/_core/chat/chat-page.js"></script>
   </head>
   <body>
@@ -12,6 +13,56 @@
           x-init="$nextTick(() => $store.chatStore.mount({ thread: $refs.thread, input: $refs.input, attachmentInput: $refs.attachmentInput, systemDialog: $refs.systemDialog, settingsDialog: $refs.settingsDialog, historyDialog: $refs.historyDialog, rawDialog: $refs.rawDialog }))"
           x-destroy="$store.chatStore.unmount()"
         >
+          <div
+            class="space-topbar-menu chat-page-menu"
+            @click.outside="$store.chatStore.closePageMenu()"
+            @keydown.escape.window="$store.chatStore.closePageMenu()"
+          >
+            <div class="space-topbar chat-page-menu-shell">
+              <button
+                type="button"
+                class="space-topbar-button space-topbar-button--icon"
+                :class="{ 'is-active': $store.chatStore.isPageMenuOpen }"
+                aria-label="Open page menu"
+                aria-haspopup="menu"
+                aria-controls="chat-page-menu-panel"
+                :aria-expanded="String($store.chatStore.isPageMenuOpen)"
+                @click="$store.chatStore.togglePageMenu()"
+              >
+                <x-icon>menu</x-icon>
+              </button>
+            </div>
+
+            <div
+              id="chat-page-menu-panel"
+              class="space-topbar-menu-panel chat-page-menu-panel"
+              x-cloak
+              x-show="$store.chatStore.isPageMenuOpen"
+              x-transition.opacity.scale.origin.top.right.duration.140ms
+              role="menu"
+              aria-label="Page menu"
+            >
+              <button
+                type="button"
+                class="space-topbar-menu-action"
+                role="menuitem"
+                @click="$store.chatStore.navigateTo('/admin')"
+              >
+                <x-icon>admin_panel_settings</x-icon>
+                <span class="space-topbar-menu-action-label">Admin</span>
+              </button>
+              <button
+                type="button"
+                class="space-topbar-menu-action"
+                role="menuitem"
+                @click="$store.chatStore.navigateTo('/logout')"
+              >
+                <x-icon>logout</x-icon>
+                <span class="space-topbar-menu-action-label">Logout</span>
+              </button>
+            </div>
+          </div>
+
           <section class="chat-thread-wrap">
             <div class="chat-thread" x-ref="thread" data-chat-thread @click="$store.chatStore.handleThreadClick($event)"></div>
           </section>

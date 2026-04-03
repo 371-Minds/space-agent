@@ -1,0 +1,30 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="/mod/_core/dashboard/dashboard.css" />
+  </head>
+  <body>
+    <section class="space-panel dashboard-view">
+      <div class="space-card space-info-card dashboard-hero">
+        <div>
+          <p class="page-eyebrow">Dashboard</p>
+          <h1>Start a new space.</h1>
+        </div>
+        <p>
+          The main app now enters through the router shell. This dashboard stays small and hands navigation to
+          <code>$router</code>.
+        </p>
+        <div class="dashboard-hero-actions">
+          <button
+            type="button"
+            class="primary-button dashboard-launch-button"
+            @click="$router.goTo('space', { params: { mode: 'new' } })"
+          >
+            <x-icon>add</x-icon>
+            <span>New Space</span>
+          </button>
+          <span class="dashboard-route-note">Routes live under <code>/#/...</code>.</span>
+        </div>
+      </div>
+    </section>
+  </body>
+</html>

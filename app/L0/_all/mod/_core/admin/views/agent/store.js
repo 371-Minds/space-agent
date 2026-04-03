@@ -6,6 +6,7 @@ import * as prompt from "/mod/_core/admin/views/agent/prompt.js";
 import * as skills from "/mod/_core/admin/views/agent/skills.js";
 import * as storage from "/mod/_core/admin/views/agent/storage.js";
 import * as agentView from "/mod/_core/admin/views/agent/view.js";
+import { closeDialog, openDialog } from "/mod/_core/visual/forms/dialog.js";
 import { countTextTokens } from "/mod/_core/framework/js/token-count.js";
 
 function createMessage(role, content, options = {}) {
@@ -32,32 +33,6 @@ function normalizeStoredMessage(message) {
     role: message?.role === "assistant" ? "assistant" : "user",
     streaming: message?.streaming === true
   };
-}
-
-function openDialog(dialog) {
-  if (!dialog) {
-    return;
-  }
-
-  if (typeof dialog.showModal === "function") {
-    dialog.showModal();
-    return;
-  }
-
-  dialog.setAttribute("open", "open");
-}
-
-function closeDialog(dialog) {
-  if (!dialog) {
-    return;
-  }
-
-  if (typeof dialog.close === "function") {
-    dialog.close();
-    return;
-  }
-
-  dialog.removeAttribute("open");
 }
 
 function findConversationInputMessage(history, assistantMessageId) {
@@ -103,7 +78,34 @@ function buildPromptHistoryText(systemPrompt, history) {
 }
 
 const MAX_PROTOCOL_RETRY_COUNT = 2;
+const MAX_COMPACT_TRIM_ATTEMPTS = 4;
 
+function isContextLengthError(error) {
+  const msg = (error?.message || "").toLowerCase();
+  return ["context", "token", "length", "maximum", "too long", "exceed"].some((pattern) => msg.includes(pattern));
+}
+
+// Trims the formatted history text by dropping the oldest message blocks so
+// compaction retries keep the newest context and continuation state.
+function trimHistoryTextToRecentMessages(text, targetFraction = 0.5) {
+  const blocks = text.split(/\n\n(?=(?:USER|ASSISTANT):\n)/u);
+
+  if (blocks.length <= 1) {
+    const targetLength = Math.max(1, Math.floor(text.length * targetFraction));
+    return text.slice(Math.max(0, text.length - targetLength));
+  }
+
+  const targetLength = Math.floor(text.length * targetFraction);
+  let trimIndex = 0;
+  let trimmed = text;
+
+  while (trimIndex < blocks.length - 1 && trimmed.length > targetLength) {
+    trimIndex += 1;
+    trimmed = blocks.slice(trimIndex).join("\n\n");
+  }
+
+  return trimmed;
+}
 
 function isExecutionFollowUpKind(kind) {
   return kind === "execution-output" || kind === "execution-retry";
@@ -671,62 +673,97 @@ const model = {
 
   async compactHistory(options = {}) {
     const historyText = this.historyText.trim();
+    const mode =
+      options.mode === prompt.ADMIN_HISTORY_COMPACT_MODE.AUTOMATIC
+        ? prompt.ADMIN_HISTORY_COMPACT_MODE.AUTOMATIC
+        : prompt.ADMIN_HISTORY_COMPACT_MODE.USER;
     const preserveFocus = options.preserveFocus !== false;
     const statusText =
-      typeof options.statusText === "string" && options.statusText.trim() ? options.statusText.trim() : "Compacting history...";
+      typeof options.statusText === "string" && options.statusText.trim()
+        ? options.statusText.trim()
+        : mode === prompt.ADMIN_HISTORY_COMPACT_MODE.AUTOMATIC
+          ? "Compacting history before continuing..."
+          : "Compacting history...";
 
     if (!historyText) {
       this.status = "No history to compact.";
       return false;
     }
 
+    const previousSendingState = this.isSending;
     this.isSending = true;
     this.isCompactingHistory = true;
     const previousTokenCount = this.historyTokenCount;
     this.status = statusText;
 
     try {
-      const compactPrompt = await prompt.fetchAdminHistoryCompactPrompt();
-      let compactedHistory = "";
+      const compactPrompt = await prompt.fetchAdminHistoryCompactPrompt({
+        mode
+      });
+      let trimmedHistoryText = historyText;
 
-      await agentApi.streamAdminAgentCompletion({
-        settings: this.settings,
-        systemPrompt: compactPrompt,
-        messages: [
-          {
-            role: "user",
-            content: historyText
-          }
-        ],
-        onDelta: (delta) => {
-          compactedHistory += delta;
+      for (let attempt = 0; attempt < MAX_COMPACT_TRIM_ATTEMPTS; attempt++) {
+        let compactedHistory = "";
+        let compactionError = null;
+
+        try {
+          await agentApi.streamAdminAgentCompletion({
+            settings: this.settings,
+            systemPrompt: compactPrompt,
+            messages: [
+              {
+                role: "user",
+                content: trimmedHistoryText
+              }
+            ],
+            onDelta: (delta) => {
+              compactedHistory += delta;
+            }
+          });
+        } catch (err) {
+          compactionError = err;
         }
-      });
 
-      const normalizedCompactedHistory = compactedHistory.trim();
+        if (!compactionError) {
+          const normalizedCompactedHistory = compactedHistory.trim();
 
-      if (!normalizedCompactedHistory) {
-        throw new Error("History compaction returned no content.");
+          if (!normalizedCompactedHistory) {
+            throw new Error("History compaction returned no content.");
+          }
+
+          const compactedMessage = createMessage("user", normalizedCompactedHistory, {
+            kind: "history-compact"
+          });
+          this.executionOutputOverrides = Object.create(null);
+          this.rerunningMessageId = "";
+          this.replaceHistory([compactedMessage]);
+          await this.persistHistory({
+            immediate: true
+          });
+          this.status = `History compacted from ${previousTokenCount.toLocaleString()} to ${this.historyTokenCount.toLocaleString()} tokens.`;
+          return compactedMessage;
+        }
+
+        const isLastAttempt = attempt === MAX_COMPACT_TRIM_ATTEMPTS - 1;
+
+        if (isLastAttempt || !isContextLengthError(compactionError)) {
+          throw compactionError;
+        }
+
+        trimmedHistoryText = trimHistoryTextToRecentMessages(trimmedHistoryText);
+
+        if (!trimmedHistoryText.trim()) {
+          throw new Error("History compaction failed: content still too large after trimming.");
+        }
+
+        this.status = `Context too large, retrying with trimmed history (attempt ${attempt + 2}/${MAX_COMPACT_TRIM_ATTEMPTS})...`;
       }
-
-      this.executionOutputOverrides = Object.create(null);
-      this.rerunningMessageId = "";
-      this.replaceHistory([
-        createMessage("user", normalizedCompactedHistory, {
-          kind: "history-compact"
-        })
-      ]);
-      await this.persistHistory({
-        immediate: true
-      });
-      this.status = `History compacted from ${previousTokenCount.toLocaleString()} to ${this.historyTokenCount.toLocaleString()} tokens.`;
-      return true;
     } catch (error) {
       this.status = error.message;
       return false;
     } finally {
       this.isCompactingHistory = false;
-      this.isSending = false;
+      this.isSending = previousSendingState;
       this.render();
 
       if (preserveFocus) {
@@ -759,6 +796,23 @@ const model = {
     let emptyAssistantRetryCount = 0;
 
     while (nextUserMessage) {
+      if (this.isHistoryOverConfiguredMaxTokens()) {
+        const pendingMessageIsLatestHistoryMessage = this.history[this.history.length - 1]?.id === nextUserMessage.id;
+        const compactedMessage = await this.compactHistory({
+          mode: prompt.ADMIN_HISTORY_COMPACT_MODE.AUTOMATIC,
+          preserveFocus: false,
+          statusText: "Compacting history before continuing..."
+        });
+
+        if (!compactedMessage) {
+          return;
+        }
+
+        if (pendingMessageIsLatestHistoryMessage) {
+          nextUserMessage = compactedMessage;
+        }
+      }
+
       const requestMessages =
         this.history[this.history.length - 1]?.id === nextUserMessage.id
           ? [...this.history]
@@ -857,6 +911,7 @@ const model = {
 
     if (this.isHistoryOverConfiguredMaxTokens()) {
       const compacted = await this.compactHistory({
+        mode: prompt.ADMIN_HISTORY_COMPACT_MODE.AUTOMATIC,
         preserveFocus: false,
         statusText: "Compacting history before send..."
       });

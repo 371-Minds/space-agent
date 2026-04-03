@@ -10,6 +10,7 @@ import { proxyExternalRequest } from "./proxy.js";
 import { sendApiResult, sendJson } from "./responses.js";
 import { applyApiCorsHeaders, handleApiPreflight } from "./cors.js";
 import { handleModuleRequest } from "./mod_handler.js";
+import { handleAppFetchRequest } from "./app_fetch_handler.js";
 import { readParsedRequestBody } from "./request_body.js";
 
 function createParamsObject(searchParams) {
@@ -188,6 +189,18 @@ function createRequestHandler(options) {
           headers: req.headers,
           projectRoot,
           requestUrl,
+          username: requestContext.user.username,
+          watchdog
+        });
+        return;
+      }
+
+      if (requestUrl.pathname.startsWith("/~/") || /^\/(L0|L1|L2)\//.test(requestUrl.pathname)) {
+        if (!ensureAuthenticatedOrRespond(res, requestContext, auth)) {
+          return;
+        }
+        handleAppFetchRequest(res, requestUrl.pathname, {
+          projectRoot,
           username: requestContext.user.username,
           watchdog
         });

@@ -1,0 +1,152 @@
+import * as config from "/mod/_core/onscreen_agent/config.js";
+
+function createDefaultConfig() {
+  return {
+    settings: { ...config.DEFAULT_ONSCREEN_AGENT_SETTINGS },
+    systemPrompt: "",
+    agentX: null,
+    agentY: null,
+    isCollapsed: false
+  };
+}
+
+function getRuntime() {
+  const runtime = globalThis.space;
+
+  if (!runtime || typeof runtime !== "object") {
+    throw new Error("Space runtime is not available.");
+  }
+
+  if (!runtime.api || typeof runtime.api.fileRead !== "function" || typeof runtime.api.fileWrite !== "function") {
+    throw new Error("space.api file helpers are not available.");
+  }
+
+  if (
+    !runtime.utils ||
+    typeof runtime.utils !== "object" ||
+    !runtime.utils.yaml ||
+    typeof runtime.utils.yaml.parse !== "function" ||
+    typeof runtime.utils.yaml.serialize !== "function"
+  ) {
+    throw new Error("space.utils.yaml is not available.");
+  }
+
+  return runtime;
+}
+
+function isMissingFileError(error) {
+  const message = String(error?.message || "");
+  return /\bstatus 404\b/u.test(message) || /File not found\./u.test(message);
+}
+
+function normalizeStoredConfig(parsedConfig) {
+  const storedConfig = parsedConfig && typeof parsedConfig === "object" ? parsedConfig : {};
+  const storedMaxTokens =
+    storedConfig.max_tokens ?? storedConfig.maxTokens ?? config.DEFAULT_ONSCREEN_AGENT_SETTINGS.maxTokens;
+
+  const rawX = storedConfig.agent_x ?? storedConfig.agentX;
+  const rawY = storedConfig.agent_y ?? storedConfig.agentY;
+
+  return {
+    settings: {
+      apiEndpoint: String(storedConfig.api_endpoint || storedConfig.apiEndpoint || config.DEFAULT_ONSCREEN_AGENT_SETTINGS.apiEndpoint || "").trim(),
+      apiKey: String(storedConfig.api_key || storedConfig.apiKey || config.DEFAULT_ONSCREEN_AGENT_SETTINGS.apiKey || "").trim(),
+      maxTokens: config.normalizeOnscreenAgentMaxTokens(storedMaxTokens),
+      model: String(storedConfig.model || config.DEFAULT_ONSCREEN_AGENT_SETTINGS.model || "").trim(),
+      paramsText: String(storedConfig.params || storedConfig.paramsText || config.DEFAULT_ONSCREEN_AGENT_SETTINGS.paramsText || "").trim()
+    },
+    systemPrompt: String(
+      storedConfig.custom_system_prompt ||
+        storedConfig.customSystemPrompt ||
+        storedConfig.system_prompt ||
+        storedConfig.systemPrompt ||
+        ""
+    ).trim(),
+    agentX: typeof rawX === "number" && Number.isFinite(rawX) ? rawX : null,
+    agentY: typeof rawY === "number" && Number.isFinite(rawY) ? rawY : null,
+    isCollapsed: storedConfig.collapsed === true
+  };
+}
+
+function buildStoredConfigPayload({ settings, systemPrompt, agentX, agentY, isCollapsed }) {
+  const normalizedSystemPrompt = typeof systemPrompt === "string" ? systemPrompt.trim() : "";
+  const payload = {
+    api_endpoint: String(settings?.apiEndpoint || config.DEFAULT_ONSCREEN_AGENT_SETTINGS.apiEndpoint || "").trim(),
+    api_key: String(settings?.apiKey || config.DEFAULT_ONSCREEN_AGENT_SETTINGS.apiKey || "").trim(),
+    max_tokens: config.normalizeOnscreenAgentMaxTokens(settings?.maxTokens),
+    model: String(settings?.model || config.DEFAULT_ONSCREEN_AGENT_SETTINGS.model || "").trim(),
+    params: String(settings?.paramsText || config.DEFAULT_ONSCREEN_AGENT_SETTINGS.paramsText || "").trim(),
+    collapsed: isCollapsed === true
+  };
+
+  if (typeof agentX === "number" && Number.isFinite(agentX)) {
+    payload.agent_x = Math.round(agentX);
+  }
+
+  if (typeof agentY === "number" && Number.isFinite(agentY)) {
+    payload.agent_y = Math.round(agentY);
+  }
+
+  if (normalizedSystemPrompt) {
+    payload.custom_system_prompt = normalizedSystemPrompt;
+  }
+
+  return payload;
+}
+
+export async function loadOnscreenAgentConfig() {
+  const runtime = getRuntime();
+
+  try {
+    const result = await runtime.api.fileRead(config.ONSCREEN_AGENT_CONFIG_PATH);
+    return normalizeStoredConfig(runtime.utils.yaml.parse(String(result?.content || "")));
+  } catch (error) {
+    if (isMissingFileError(error)) {
+      return createDefaultConfig();
+    }
+
+    throw new Error(`Unable to load onscreen agent config: ${error.message}`);
+  }
+}
+
+export async function saveOnscreenAgentConfig(nextConfig) {
+  const runtime = getRuntime();
+  const content = runtime.utils.yaml.serialize(buildStoredConfigPayload(nextConfig));
+
+  try {
+    await runtime.api.fileWrite(config.ONSCREEN_AGENT_CONFIG_PATH, content);
+  } catch (error) {
+    throw new Error(`Unable to save onscreen agent config: ${error.message}`);
+  }
+}
+
+export async function loadOnscreenAgentHistory() {
+  const runtime = getRuntime();
+
+  try {
+    const result = await runtime.api.fileRead(config.ONSCREEN_AGENT_HISTORY_PATH);
+    const parsed = JSON.parse(String(result?.content || "[]"));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    if (isMissingFileError(error)) {
+      return [];
+    }
+
+    if (error instanceof SyntaxError) {
+      throw new Error("Unable to load onscreen agent history: invalid JSON.");
+    }
+
+    throw new Error(`Unable to load onscreen agent history: ${error.message}`);
+  }
+}
+
+export async function saveOnscreenAgentHistory(history) {
+  const runtime = getRuntime();
+  const content = `${JSON.stringify(Array.isArray(history) ? history : [], null, 2)}\n`;
+
+  try {
+    await runtime.api.fileWrite(config.ONSCREEN_AGENT_HISTORY_PATH, content);
+  } catch (error) {
+    throw new Error(`Unable to save onscreen agent history: ${error.message}`);
+  }
+}
