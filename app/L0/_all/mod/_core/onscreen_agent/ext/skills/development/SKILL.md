@@ -14,6 +14,7 @@ When the user wants to extend the system with a reusable interface rather than a
 - Load `development/backend-reference` only to understand backend contracts that the frontend calls into.
 - For broad architecture orientation, load the top-level `documentation` skill and use its built-in docs map before diving into narrower docs.
 - Before writing files, call `await space.api.userSelfInfo()` and derive writable roots from `username`, `managedGroups`, and `_admin` membership in `groups`.
+- Never add third-party CORS proxy services in frontend code or widgets. Load `development/frontend-runtime` and use runtime-managed `fetch(...)`, `space.fetchExternal(...)`, or `space.proxy.buildUrl(...)` instead.
 - Always update the relevant `AGENTS.md` files and the matching docs under `/mod/_core/documentation/docs/` in the same session as your code changes.
 
 ## Load These Skills Next

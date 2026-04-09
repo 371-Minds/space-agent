@@ -38,6 +38,8 @@ Use this skill when the task changes browser runtime behavior, framework-backed 
 
 External browser fetches under the framework should try direct `fetch(...)` first and only fall back to `/api/proxy` after a failed cross-origin attempt; when that fallback succeeds, the runtime keeps an in-memory origin cache so later requests to the same origin go through the backend immediately for the rest of the page lifetime.
 
+Do not hardcode third-party CORS proxy services such as allorigins, corsproxy, or codetabs in frontend code or widget renderers. For external HTTP reads, use plain `fetch(externalUrl)` or `space.fetchExternal(externalUrl)` and let the runtime handle `/api/proxy` fallback automatically. Use `space.proxy.buildUrl(...)` only when you need a same-origin proxied URL string for a non-fetch consumer such as an element attribute or link target.
+
 `space.utils.markdown.render(...)` is the shared browser markdown wrapper. It inserts a `.markdown` root so the owning feature can style rendered markdown predictably.
 
 `space.api` includes attachment-style helpers such as `space.api.folderDownloadUrl(pathOrOptions)` when a feature needs a same-origin download URL instead of a fetched blob.

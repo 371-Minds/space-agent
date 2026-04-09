@@ -245,7 +245,7 @@ Runtime guidance:
 - use `space.config` for frontend reads of backend parameters that were explicitly marked `frontend_exposed`
 - use `space.utils.markdown.render(text, target)` for lightweight shared markdown rendering into a `.markdown` wrapper and `space.utils.markdown.parseDocument(...)` for frontmatter parsing; keep feature-local presentation in the owning module's CSS
 - use `space.utils.yaml.parse(...)` and `space.utils.yaml.stringify(...)` for frontend YAML parsing and serialization owned by browser modules; this runtime surface is backed by the shared project-owned lightweight YAML utility in `_core/framework/js/yaml-lite.js`, which the server also imports directly so nested maps lists block scalars and standard YAML quoting stay consistent across both runtimes
-- framework-managed external `fetch(...)` calls should prefer a direct browser request first; if the direct cross-origin request fails and the `/api/proxy` retry succeeds, the runtime should remember that origin in memory and route later requests for the same origin through the backend immediately
+- framework-managed external `fetch(...)` calls and `space.fetchExternal(...)` should prefer a direct browser request first; if the direct cross-origin request fails and the `/api/proxy` retry succeeds, the runtime should remember that origin in memory and route later requests for the same origin through the backend immediately, and frontend code should not hardcode third-party CORS proxy services because that fallback is already owned by the runtime
 - browser storage is for small non-authoritative UI state; persistent user state belongs in app files or explicit backend APIs
 
 ## Visual Direction

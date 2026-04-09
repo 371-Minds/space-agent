@@ -166,6 +166,8 @@ renderer rules
 - Default widget card surface is `#101b2d` (`rgba(16, 27, 45, 0.92)`). Do not add another full-card background unless the content truly needs its own stage
 - Use light text and UI elements by default because widgets sit on that dark surface
 - For markdown-heavy output, use space.utils.markdown.render(text, parent)
+- For external HTTP reads, use `fetch(url)` or `space.fetchExternal(url)`. Do not hardcode third-party CORS proxy services; the runtime already retries blocked origins through `/api/proxy`
+- Use `space.proxy.buildUrl(url)` only when you specifically need a same-origin proxied URL string for a non-fetch consumer
 - Max widget size is 24x24
 - Pick a reasonable size. Do not default to oversized cards
 - Return a cleanup function if you attach listeners, timers, or other long-lived effects

@@ -6,11 +6,9 @@ renderer: |-
     parent.style.cssText = 'display:flex;flex-direction:column;gap:0;overflow:hidden;height:100%;background:#0f0f0f;border-radius:8px;';
   
     const CHANNEL_ID = 'UCm4Sy7W36u_ZFOZWX9cd07w'; // AgentZeroFW
-    const API_KEY = '';
   
-    // Use RSS feed via allorigins proxy to avoid CORS and API key requirement
+    // The frontend runtime automatically retries blocked origins through /api/proxy.
     const RSS_URL = 'https://www.youtube.com/feeds/videos.xml?channel_id=' + CHANNEL_ID;
-    const PROXY = 'https://corsproxy.io/?' + encodeURIComponent(RSS_URL);
   
   
     const list = document.createElement('div');
@@ -106,7 +104,8 @@ renderer: |-
     }
   
     try {
-      const res = await fetch(PROXY);
+      const res = await space.fetchExternal(RSS_URL);
+      if (!res.ok) throw new Error('Feed request failed: HTTP ' + res.status);
       const xmlText = await res.text();
       const videos = parseVideos(xmlText);
       if (videos.length === 0) throw new Error('No videos parsed');

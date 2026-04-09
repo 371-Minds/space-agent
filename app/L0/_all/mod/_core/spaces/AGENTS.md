@@ -63,6 +63,7 @@ Current widget contract:
 - widget size is capped at `24` columns by `24` rows; size normalization and resize interactions must clamp to that ceiling
 - generated or agent-authored widgets should choose only the grid footprint they actually need rather than defaulting to oversized cards; one logical grid cell is roughly `85px` square, about `5.3rem` at a `16px` root size, so widget defaults should use a reasonable column/row count and aspect ratio for the rendered content
 - generated or agent-authored widgets should treat the framework-owned card shell as the default visual container: do not add extra outer padding wrappers, do not add another generic full-card background unless the content truly needs its own stage, and prefer light foreground text or controls that read cleanly on the shell's dark space-blue surface `#101b2d` (`rgba(16, 27, 45, 0.92)`)
+- widgets that fetch remote HTTP data should use runtime-managed `fetch(...)` or `space.fetchExternal(...)`; do not hardcode third-party CORS proxy services such as allorigins or corsproxy inside widget renderers, because the frontend runtime already retries blocked origins through `/api/proxy` and remembers successful proxy-needed origins for the rest of the page lifetime
 - generated widget scaffolds should not inject instructional title blocks or storage-explainer copy into the visible widget output
 
 ## Runtime Namespace

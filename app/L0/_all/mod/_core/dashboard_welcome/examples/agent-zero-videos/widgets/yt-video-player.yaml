@@ -25,10 +25,10 @@ renderer: |-
     // Load newest video independently on init (no autoplay)
     const CHANNEL_ID = 'UCm4Sy7W36u_ZFOZWX9cd07w';
     const RSS_URL = 'https://www.youtube.com/feeds/videos.xml?channel_id=' + CHANNEL_ID;
-    const PROXY = 'https://corsproxy.io/?' + encodeURIComponent(RSS_URL);
   
     try {
-      const res = await fetch(PROXY);
+      const res = await space.fetchExternal(RSS_URL);
+      if (!res.ok) throw new Error('Feed request failed: HTTP ' + res.status);
       const xmlText = await res.text();
       const parser = new DOMParser();
       const doc = parser.parseFromString(xmlText, 'application/xml');

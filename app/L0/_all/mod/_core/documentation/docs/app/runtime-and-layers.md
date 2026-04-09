@@ -69,6 +69,8 @@ Important namespaces:
 
 The runtime is window-local. It must not be published into `parent`, `top`, or sibling frames.
 
+For external HTTP reads, frontend code should use plain `fetch(externalUrl)` or `space.fetchExternal(externalUrl)`. The runtime already retries blocked cross-origin requests through `/api/proxy` and caches successful fallback origins in memory, so repo-owned frontend code and widgets should not hardcode third-party CORS proxy services.
+
 ## Identity And Writable Roots
 
 Frontend code should derive writable roots from `space.api.userSelfInfo()`.
