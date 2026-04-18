@@ -1,6 +1,6 @@
 const DEFAULT_WEBVIEW_PARTITION_PREFIX = "space-browser-";
 const BROWSER_FRAME_INJECT_PRELUDE_PATHS = Object.freeze([
-  "/mod/_core/web_browsing/vendor/dom-to-semantic-markdown.min.js"
+  "/mod/_core/web_browsing/browser-page-content.js"
 ]);
 const WEBVIEW_SHADOW_STYLE_ATTRIBUTE = "data-space-browser-webview-style";
 const WEBVIEW_EMBEDDER_FRAME_SELECTOR = "iframe, embed, object, browserplugin";

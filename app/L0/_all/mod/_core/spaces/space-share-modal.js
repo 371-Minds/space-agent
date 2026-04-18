@@ -1,4 +1,4 @@
-import { closeModal, openModal } from "/mod/_core/framework/js/modals.js";
+import { closeDialog, openDialog } from "/mod/_core/visual/forms/dialog.js";
 import { buildSpaceRootPath } from "/mod/_core/spaces/storage.js";
 import {
   getSpaceDisplayTitle,
@@ -10,7 +10,6 @@ import {
 import { showToast } from "/mod/_core/visual/chrome/toast.js";
 import { encryptSharePayload, ensureWebCrypto } from "/pages/res/share-crypto.js";
 
-const MODAL_PATH = "/mod/_core/spaces/space-share-modal.html";
 const STORE_NAME = "spacesShareModal";
 const CLOUD_SHARE_MAX_BYTES = 2 * 1024 * 1024;
 
@@ -114,6 +113,19 @@ function createAnchorDownload(url, filename) {
 
 function createErrorMessage(error, fallback) {
   return String(error?.message || fallback || "Unexpected error.");
+}
+
+function logShareModalError(action, error) {
+  console.error(`[spacesShareModal] ${action}`, error);
+}
+
+function createLoggedErrorMessage(action, error, fallback) {
+  logShareModalError(action, error);
+  return createErrorMessage(error, fallback);
+}
+
+function normalizeDialogElement(dialogElement) {
+  return dialogElement instanceof HTMLDialogElement ? dialogElement : null;
 }
 
 function hasMeaningfulSpaceMetadata(spaceRecord) {
@@ -244,15 +256,18 @@ async function copyTextToClipboard(text) {
 
 const model = {
   activeRequestId: "",
+  refs: {},
+  archiveErrorText: "",
+  archiveStatusText: "",
   busyAction: "",
+  cloudErrorText: "",
   cloudShareBaseUrl: "",
   cloudSharePassword: "",
+  cloudStatusText: "",
   currentSpace: null,
-  errorText: "",
   shareUrl: "",
   spaceId: "",
   spaceTitle: "",
-  statusText: "",
 
   get canShareToCloud() {
     return Boolean(this.cloudShareBaseUrl);
@@ -290,21 +305,57 @@ const model = {
     return this.busyAction === "import";
   },
 
+  clearArchiveFeedback() {
+    this.archiveErrorText = "";
+    this.archiveStatusText = "";
+  },
+
+  clearCloudFeedback() {
+    this.cloudErrorText = "";
+    this.cloudStatusText = "";
+  },
+
   resetState() {
     this.activeRequestId = "";
+    this.archiveErrorText = "";
+    this.archiveStatusText = "";
     this.busyAction = "";
+    this.cloudErrorText = "";
     this.cloudShareBaseUrl = "";
     this.cloudSharePassword = "";
+    this.cloudStatusText = "";
     this.currentSpace = null;
-    this.errorText = "";
     this.shareUrl = "";
     this.spaceId = "";
     this.spaceTitle = "";
-    this.statusText = "";
   },
 
-  async openModal(options = {}) {
-    if (activeRequest) {
+  mount(refs = {}) {
+    this.refs = {
+      shareDialog: normalizeDialogElement(refs.shareDialog)
+    };
+  },
+
+  unmount() {
+    const dialogElement = normalizeDialogElement(this.refs?.shareDialog);
+
+    if (dialogElement?.open) {
+      closeDialog(dialogElement);
+    }
+
+    this.refs = {};
+    activeRequest = null;
+    this.resetState();
+  },
+
+  async openShareDialog(options = {}) {
+    const dialogElement = normalizeDialogElement(this.refs?.shareDialog);
+
+    if (!dialogElement) {
+      throw new Error("The space share dialog is not mounted.");
+    }
+
+    if (activeRequest || dialogElement.open) {
       throw new Error("The space share modal is already open.");
     }
 
@@ -318,29 +369,17 @@ const model = {
     activeRequest = request;
     this.activeRequestId = request.id;
     this.busyAction = "";
-    this.cloudShareBaseUrl = normalizeCloudShareBaseUrl(runtime.config?.get("CLOUD_SHARE_URL", "share.agent-zero.ai"));
+    this.cloudShareBaseUrl = normalizeCloudShareBaseUrl(runtime.config?.get("CLOUD_SHARE_URL", "share.space-agent.ai"));
     this.cloudSharePassword = "";
     this.currentSpace = normalizedOptions.currentSpace;
-    this.errorText = "";
+    this.clearArchiveFeedback();
+    this.clearCloudFeedback();
     this.shareUrl = "";
     this.spaceId = normalizedOptions.spaceId;
     this.spaceTitle = normalizedOptions.spaceTitle;
-    this.statusText = "";
 
     try {
-      await openModal(MODAL_PATH, () => {
-        if (activeRequest?.id !== request.id) {
-          return true;
-        }
-
-        if (this.isBusy) {
-          return false;
-        }
-
-        activeRequest = null;
-        this.resetState();
-        return true;
-      });
+      openDialog(dialogElement);
     } catch (error) {
       if (activeRequest?.id === request.id) {
         activeRequest = null;
@@ -353,12 +392,24 @@ const model = {
     return request.result;
   },
 
-  async closeShareModal() {
+  closeShareDialog() {
     if (this.isBusy) {
-      return;
+      return false;
     }
 
-    await closeModal(MODAL_PATH);
+    const dialogElement = normalizeDialogElement(this.refs?.shareDialog);
+
+    if (dialogElement?.open) {
+      closeDialog(dialogElement);
+    }
+
+    activeRequest = null;
+    this.resetState();
+    return true;
+  },
+
+  async closeShareModal() {
+    return this.closeShareDialog();
   },
 
   async downloadZip() {
@@ -367,8 +418,8 @@ const model = {
     }
 
     this.busyAction = "download";
-    this.errorText = "";
-    this.statusText = "Preparing ZIP download...";
+    this.clearArchiveFeedback();
+    this.archiveStatusText = "Preparing ZIP download...";
 
     try {
       const runtime = getRuntime();
@@ -383,10 +434,10 @@ const model = {
         runtime.api.folderDownloadUrl(spaceRoot),
         createDownloadFilename(this.spaceId, this.spaceTitle)
       );
-      this.statusText = "ZIP download started.";
+      this.archiveStatusText = "ZIP download started.";
     } catch (error) {
-      this.errorText = createErrorMessage(error, "Unable to download the ZIP.");
-      this.statusText = "";
+      this.archiveErrorText = createLoggedErrorMessage("downloadZip", error, "Unable to download the ZIP.");
+      this.archiveStatusText = "";
     } finally {
       this.busyAction = "";
     }
@@ -414,9 +465,8 @@ const model = {
     }
 
     this.busyAction = "import";
-    this.errorText = "";
-    this.shareUrl = "";
-    this.statusText = "Importing ZIP...";
+    this.clearArchiveFeedback();
+    this.archiveStatusText = "Importing ZIP...";
 
     try {
       const shouldPrompt = await shouldPromptForOverwrite(this.spaceId, this.currentSpace);
@@ -438,7 +488,7 @@ const model = {
       }
 
       this.busyAction = "";
-      await closeModal(MODAL_PATH);
+      this.closeShareDialog();
 
       if (mode === "replace") {
         await runtime.spaces.reloadCurrentSpace();
@@ -453,11 +503,11 @@ const model = {
         tone: "success"
       });
     } catch (error) {
-      const message = createErrorMessage(error, "Unable to import the ZIP.");
+      const message = createLoggedErrorMessage("handleImportFileChange", error, "Unable to import the ZIP.");
 
       if (activeRequest?.id === this.activeRequestId) {
-        this.errorText = message;
-        this.statusText = "";
+        this.archiveErrorText = message;
+        this.archiveStatusText = "";
         this.busyAction = "";
         return;
       }
@@ -474,9 +524,9 @@ const model = {
     }
 
     this.busyAction = "cloud";
-    this.errorText = "";
+    this.clearCloudFeedback();
     this.shareUrl = "";
-    this.statusText = "Creating ZIP...";
+    this.cloudStatusText = "Creating ZIP...";
 
     try {
       const archiveBytes = await fetchSpaceArchiveBytes(this.spaceId);
@@ -486,7 +536,7 @@ const model = {
 
       if (password) {
         ensureWebCrypto();
-        this.statusText = "Encrypting ZIP...";
+        this.cloudStatusText = "Encrypting ZIP...";
         const encryptedPayload = await encryptSharePayload(archiveBytes, password);
         uploadBytes = encryptedPayload.payloadBytes;
         encryption = encryptedPayload.encryption;
@@ -496,7 +546,7 @@ const model = {
         throw new Error("Cloud shares must be 2 MB or smaller.");
       }
 
-      this.statusText = "Uploading cloud share...";
+      this.cloudStatusText = "Uploading cloud share...";
       const shareResponse = await createCloudShare(this.cloudShareBaseUrl, uploadBytes, encryption);
       const shareUrl = String(shareResponse?.shareUrl || shareResponse?.url || "").trim();
 
@@ -505,13 +555,13 @@ const model = {
       }
 
       this.shareUrl = shareUrl;
-      this.statusText = password ? "Protected cloud share ready." : "Cloud share ready.";
+      this.cloudStatusText = password ? "Protected cloud share ready." : "Cloud share ready.";
       showToast("Cloud share created.", {
         tone: "success"
       });
     } catch (error) {
-      this.errorText = createErrorMessage(error, "Unable to create the cloud share.");
-      this.statusText = "";
+      this.cloudErrorText = createLoggedErrorMessage("shareToCloud", error, "Unable to create the cloud share.");
+      this.cloudStatusText = "";
     } finally {
       this.busyAction = "";
     }
@@ -522,6 +572,8 @@ const model = {
       return;
     }
 
+    this.cloudErrorText = "";
+
     try {
       if (await copyTextToClipboard(this.shareUrl)) {
         showToast("Share link copied.", {
@@ -529,7 +581,10 @@ const model = {
         });
         return;
       }
-    } catch {}
+    } catch (error) {
+      this.cloudErrorText = createLoggedErrorMessage("copyShareUrl", error, "Unable to copy the share link.");
+      return;
+    }
 
     if (inputElement instanceof HTMLInputElement) {
       inputElement.focus();
@@ -540,7 +595,11 @@ const model = {
       return;
     }
 
-    this.errorText = "Unable to copy the share link.";
+    this.cloudErrorText = createLoggedErrorMessage(
+      "copyShareUrl",
+      new Error("Unable to copy the share link."),
+      "Unable to copy the share link."
+    );
   },
 
   openShareUrl() {
@@ -556,8 +615,9 @@ const runtime = getRuntime();
 const store = runtime.fw.createStore(STORE_NAME, model);
 
 export async function openSpaceShareModal(options = {}) {
-  return store.openModal(options);
+  return store.openShareDialog(options);
 }
 
 runtime.spaces = runtime.spaces || {};
 runtime.spaces.openShareModal = openSpaceShareModal;
+

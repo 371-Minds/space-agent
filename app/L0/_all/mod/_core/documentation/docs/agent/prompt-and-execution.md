@@ -43,6 +43,8 @@ Important details:
 - owner modules may prepend extra system-prompt sections before the skill catalog; `_core/promptinclude` currently injects a stable `## prompt includes` instruction block there and then appends readable `*.system.include.md` files as extra system-prompt sections
 - transient runtime context is emitted as its own trailing prepared message when present
 - `_core/onscreen_agent` currently adds one short lowercase `chat display mode` transient section only in compact mode so the model sees `chat is in compact mode` and `keep replies short unless more detail is needed for correctness or the user asks for it`; full mode adds no display-mode section
+- `_core/web_browsing` may also append a `currently open web browsers` transient section when browser windows exist, using the compact pipe-delimited rows `browser id|url|title` so the agent can see the current browser set without inflating prompt size
+- `_core/web_browsing` may also append `last interacted web browser` when a browser targeted by agent-driven open or create or navigation or interaction helpers is still open at prompt-build time; that hook fetches fresh simplified `content` for that one browser during transient-section construction instead of caching page content at click or type time, so a later closed browser contributes nothing stale
 - `_core/promptinclude` may also append a `prompt includes` transient section that lists readable `**/*.transient.include.md` files in alphabetical full-path order and renders each file body in its own fenced block
 
 ## Message Markers
@@ -122,4 +124,4 @@ Important extension families:
 - final prompt-input assembly
 - execution-plan validation hooks
 
-Current first-party examples include `_core/spaces` for current-space instructions, `_core/promptinclude` for persistent split system/transient include discovery, `_core/memory` for prompt-include-backed `~/memory/` behavior and rolling notes through an auto-loaded system skill, and the `_core/onscreen_agent` display-mode transient hook for compact-mode reply guidance. Module-specific workflow policy still belongs in owner-module skills or owner-module `_core/onscreen_agent/...` JS hooks.
+Current first-party examples include `_core/spaces` for current-space instructions, `_core/promptinclude` for persistent split system/transient include discovery, `_core/memory` for prompt-include-backed `~/memory/` behavior and rolling notes through an auto-loaded system skill, `_core/web_browsing` for both brief open-browser status and prompt-time last-interacted browser content in transient context, and the `_core/onscreen_agent` display-mode transient hook for compact-mode reply guidance. Module-specific workflow policy still belongs in owner-module skills or owner-module `_core/onscreen_agent/...` JS hooks.

@@ -51,7 +51,9 @@ Actions and forms:
 
 - `actions/buttons.css` owns shared `primary-button`, `secondary-button`, and `confirm-button` treatments plus composer-attachment chip styling
 - `forms/dialog.css` plus `forms/dialog.js` own the shared native `<dialog>` presentation and open or close helpers
+- authenticated app feature dialogs are standardized on feature-owned native `<dialog class="chat-dialog">` markup that lives in the owning feature HTML, opens through `forms/dialog.js`, and composes `dialog-card` or `dialog-card-shell` content wrappers from `forms/dialog.css`
 - `forms/dialog.css` also owns the reusable fixed-chrome dialog shell classes for long modals: `dialog-card-shell` keeps the header and footer static, `dialog-scroll-body` and `dialog-scroll-frame` own the interior scrolling region, and `dialog-actions-split` plus `dialog-actions-group` and `dialog-action-button-fixed` cover compact split footer rows without feature-local inline layout
+- the framework modal shell in `_core/framework/js/modals.js` is reserved for generic separately loaded modal documents or shared utilities such as icon selectors that genuinely need that wrapper; it is not the default chrome path for first-party feature dialogs
 - modal-scoped button chrome belongs in `forms/dialog.css`, not in feature-local styles: dialogs should use the tighter admin-style geometry with compact 10px radii, no oversized pill buttons, transparent secondary actions, and flatter primary or confirm actions without the large shared button shadows
 
 Resources:
@@ -76,6 +78,7 @@ Conversation and surfaces:
 - solve shared presentation problems here before cloning styles into feature modules
 - keep the overall direction calm, dark, and readable rather than loud or novelty-driven
 - avoid putting feature logic, API calls, or store state into this module
+- when a feature needs a dialog, default to the shared native `<dialog class="chat-dialog">` pattern documented here; only update the visual system itself when that pattern must change for everyone
 - when a modal needs persistent action rows, scroll the inner body or framed content area through the shared dialog shell helpers instead of putting overflow on the full dialog card
 - when a primitive is only used by one feature, keep it local until reuse is real
 - keep reusable selection modals generic: the visual layer may own search, pagination, preview, and return-value flow, but feature-specific metadata semantics stay in the calling module

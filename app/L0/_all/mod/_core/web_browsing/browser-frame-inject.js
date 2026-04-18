@@ -14,8 +14,11 @@
   const BRIDGE_NAVIGATION_EVENTS_FLAG = "__spaceBrowserFrameInjectNavigationEventsReady__";
   const BRIDGE_OPEN_WINDOW_FLAG = "__spaceBrowserFrameInjectOpenWindowReady__";
   const BRIDGE_CONTENT_FLAG = "__spaceBrowserFrameInjectContentReady__";
+  const BRIDGE_DETAIL_FLAG = "__spaceBrowserFrameInjectDetailReady__";
+  const BRIDGE_INTERACTION_FLAG = "__spaceBrowserFrameInjectInteractionReady__";
   const BRIDGE_PING_FLAG = "__spaceBrowserFrameInjectPingReady__";
   const HISTORY_PATCH_FLAG = "__spaceBrowserFrameInjectHistoryPatchReady__";
+  const PAGE_CONTENT_HELPER_KEY = "__spaceBrowserPageContent__";
 
   function isPlainObject(value) {
     if (!value || Object.prototype.toString.call(value) !== "[object Object]") {
@@ -404,68 +407,147 @@
     return snapshot;
   }
 
-  function getSemanticMarkdownApi() {
-    if (globalThis.htmlToSMD?.convertHtmlToMarkdown) {
-      return globalThis.htmlToSMD;
-    }
-
-    if (typeof htmlToSMD !== "undefined" && htmlToSMD?.convertHtmlToMarkdown) {
-      return htmlToSMD;
+  function getPageContentHelper() {
+    const helper = globalThis[PAGE_CONTENT_HELPER_KEY];
+    if (helper?.capture && helper?.detail) {
+      return helper;
     }
 
     throw createNamedError(
       "BrowserFrameBridgeContentUnavailableError",
-      "Browser frame semantic content conversion is unavailable in this runtime.",
+      "Browser frame page content helper is unavailable in this runtime.",
       {
         code: "browser_frame_content_unavailable"
       }
     );
   }
 
-  function convertHtmlToSemanticContent(html, options = {}) {
-    const normalizedHtml = String(html || "");
-    if (!normalizedHtml.trim()) {
-      return "";
+  function resolveReferencePayload(payload) {
+    if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+      return payload.referenceId ?? payload.ref ?? payload.id ?? null;
+    }
+
+    return payload;
+  }
+
+  function resolveTypedReferencePayload(payload) {
+    const referenceId = resolveReferencePayload(payload);
+    const value = payload && typeof payload === "object" && !Array.isArray(payload)
+      ? payload.value ?? payload.text ?? ""
+      : "";
+
+    return {
+      referenceId,
+      value
+    };
+  }
+
+  function invokePageContentHelper(methodName, args, errorName, errorMessage, errorCode) {
+    const helper = getPageContentHelper();
+    const method = helper?.[methodName];
+
+    if (typeof method !== "function") {
+      throw createNamedError(
+        "BrowserFrameBridgeContentUnavailableError",
+        "Browser frame page content helper does not support this action in the current runtime.",
+        {
+          code: "browser_frame_content_action_unavailable",
+          details: {
+            action: methodName
+          }
+        }
+      );
     }
 
     try {
-      const semanticMarkdownApi = getSemanticMarkdownApi();
-      const markdown = semanticMarkdownApi.convertHtmlToMarkdown(normalizedHtml, {
-        includeMetaData: options.includeMetaData === "basic" || options.includeMetaData === "extended"
-          ? options.includeMetaData
-          : false,
-        refifyUrls: true,
-        websiteDomain: String(globalThis.location?.origin || "")
-      });
-
-      return typeof markdown === "string" ? markdown.trim() : String(markdown || "");
+      return method(...args);
     } catch (error) {
       throw createNamedError(
-        "BrowserFrameBridgeContentError",
-        `Browser frame bridge could not convert "${String(options.target || "document")}" to semantic content.`,
+        errorName,
+        errorMessage,
         {
-          code: "browser_frame_content_error",
+          code: errorCode,
+          cause: error,
           details: {
-            target: String(options.target || "document")
-          },
-          cause: error
+            action: methodName
+          }
         }
       );
     }
   }
 
   function collectSemanticContent(payload = null) {
-    const snapshot = collectDomSnapshot(payload);
-    const content = {};
+    return invokePageContentHelper(
+      "capture",
+      [payload],
+      "BrowserFrameBridgeContentError",
+      "Browser frame bridge could not collect semantic page content.",
+      "browser_frame_content_error"
+    );
+  }
 
-    Object.entries(snapshot).forEach(([key, html]) => {
-      content[key] = convertHtmlToSemanticContent(html, {
-        includeMetaData: key === "document" ? "basic" : false,
-        target: key
-      });
-    });
+  function collectReferenceDetail(payload = null) {
+    return invokePageContentHelper(
+      "detail",
+      [payload],
+      "BrowserFrameBridgeDetailError",
+      "Browser frame bridge could not resolve the requested reference detail.",
+      "browser_frame_detail_error"
+    );
+  }
 
-    return content;
+  function clickReference(payload = null) {
+    return invokePageContentHelper(
+      "click",
+      [resolveReferencePayload(payload)],
+      "BrowserFrameBridgeClickError",
+      "Browser frame bridge could not click the requested reference.",
+      "browser_frame_click_error"
+    );
+  }
+
+  function typeReference(payload = null) {
+    const typedPayload = resolveTypedReferencePayload(payload);
+
+    return invokePageContentHelper(
+      "type",
+      [typedPayload.referenceId, typedPayload.value],
+      "BrowserFrameBridgeTypeError",
+      "Browser frame bridge could not type into the requested reference.",
+      "browser_frame_type_error"
+    );
+  }
+
+  function submitReference(payload = null) {
+    return invokePageContentHelper(
+      "submit",
+      [resolveReferencePayload(payload)],
+      "BrowserFrameBridgeSubmitError",
+      "Browser frame bridge could not submit the requested reference.",
+      "browser_frame_submit_error"
+    );
+  }
+
+  function typeSubmitReference(payload = null) {
+    const typedPayload = resolveTypedReferencePayload(payload);
+
+    return invokePageContentHelper(
+      "typeSubmit",
+      [typedPayload.referenceId, typedPayload.value],
+      "BrowserFrameBridgeTypeSubmitError",
+      "Browser frame bridge could not type and submit the requested reference.",
+      "browser_frame_type_submit_error"
+    );
+  }
+
+  function scrollReference(payload = null) {
+    return invokePageContentHelper(
+      "scroll",
+      [resolveReferencePayload(payload)],
+      "BrowserFrameBridgeScrollError",
+      "Browser frame bridge could not scroll to the requested reference.",
+      "browser_frame_scroll_error"
+    );
   }
 
   function readNavigationCapability(key) {
@@ -959,6 +1041,30 @@
     return bridge;
   }
 
+  function installDetailHandler(bridge) {
+    if (!bridge || bridge[BRIDGE_DETAIL_FLAG]) {
+      return bridge;
+    }
+
+    bridge.handle("detail", (payload) => collectReferenceDetail(payload));
+    bridge[BRIDGE_DETAIL_FLAG] = true;
+    return bridge;
+  }
+
+  function installInteractionHandler(bridge) {
+    if (!bridge || bridge[BRIDGE_INTERACTION_FLAG]) {
+      return bridge;
+    }
+
+    bridge.handle("click", (payload) => clickReference(payload));
+    bridge.handle("type", (payload) => typeReference(payload));
+    bridge.handle("submit", (payload) => submitReference(payload));
+    bridge.handle("type_submit", (payload) => typeSubmitReference(payload));
+    bridge.handle("scroll", (payload) => scrollReference(payload));
+    bridge[BRIDGE_INTERACTION_FLAG] = true;
+    return bridge;
+  }
+
   function installNavigationHandler(bridge) {
     if (!bridge || bridge[BRIDGE_NAVIGATION_FLAG]) {
       return bridge;
@@ -1017,10 +1123,14 @@
   const existingBridge = globalThis[BRIDGE_GLOBAL_KEY];
   const bridge = installNavigationEvents(
     installNavigationHandler(
-      installContentHandler(
-        installDomHandler(
-          installPingHandler(
-            installOpenWindowHooks(existingBridge || createBridge())
+      installInteractionHandler(
+        installDetailHandler(
+          installContentHandler(
+            installDomHandler(
+              installPingHandler(
+                installOpenWindowHooks(existingBridge || createBridge())
+              )
+            )
           )
         )
       )

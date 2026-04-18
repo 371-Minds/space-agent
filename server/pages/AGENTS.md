@@ -91,8 +91,10 @@ Current public shell assets:
 - must not depend on authenticated `/mod/...` assets
 - reuses the mirrored public backdrop assets from `server/pages/res/space-backdrop.*`
 - declares the `Shared Space | Space Agent` document title plus the shared favicon family
-- reads the share token from the multi-segment `/share/space/<token>` route, checks whether the stored share metadata declares browser-side password protection, prompts for the password when needed, decrypts the ZIP in the browser through `server/pages/res/share-crypto.js`, then posts the clear ZIP bytes to `/api/cloud_share_clone`
+- reads the share token from the multi-segment `/share/space/<token>` route, checks whether the stored share metadata declares browser-side password protection, downloads the hosted ZIP, decrypts that ZIP in the browser through `server/pages/res/share-crypto.js` when needed, previews the shared space title plus optional thumbnail plus widget-name pills from inside the archive, and only then posts the clear ZIP bytes to `/api/cloud_share_clone`
+- should keep the preview explicit and user-readable instead of auto-cloning blindly, using the shared-space title when present and falling back gracefully when preview fields are missing
 - should keep the copy explicit that shared code opens only inside a temporary guest account and never inside the visitor's existing user folder
+- should grant the same-tab launcher-access marker before navigating into the cloned guest session so successful public share opens land directly in the imported guest space instead of bouncing back through `/enter`
 - should surface clone failures in place instead of redirecting into half-initialized guest sessions
 
 `enter.html`:
@@ -130,7 +132,7 @@ Rules:
 - keep the mirrored public backdrop aligned with `_core/visual`
 - keep both the mirrored base canvas gradient and the mirrored star or glow scene fixed to the viewport so public-shell scrolling never drags them
 - if the shared backdrop visuals or runtime behavior change, review and update these mirrored files in the same session
-- `server/pages/res/share-space.js` owns the public hosted-share open flow, and `server/pages/res/share-crypto.js` owns the browser-side password-based ZIP encryption and decryption used by both the public share shell and the authenticated spaces share modal
+- `server/pages/res/share-space.js` owns the public hosted-share preview plus open flow, including browser-side ZIP preview reads for the public shell and the same-tab guest-session handoff after clone, and `server/pages/res/share-crypto.js` owns the browser-side password-based ZIP encryption and decryption used by both the public share shell and the authenticated spaces share modal
 - keep public-shell assets under `server/pages/res/` instead of embedding large data blobs into page HTML
 - keep crawler and LLM discovery files at the root `server/pages/` level so they can be aliased directly to `/<filename>` without going through authenticated page routes
 - keep the shared social-preview banner in `server/pages/res/` so page-shell Open Graph and Twitter metadata never depend on `.github/` paths or external asset hosts

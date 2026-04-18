@@ -163,6 +163,7 @@ These rules apply across the codebase:
 - only add a new runtime-owned skill seam when the existing metadata-driven skill system cannot express the requirement, and document that reason in the owning `AGENTS.md`
 - do not create new scratch, temporary, or throwaway directories under the repo as tracked content, especially hidden paths such as `.tmp/`; local verification artifacts must stay outside the published repo or in ignored local paths unless the user explicitly asks for a checked-in fixture
 - do not check generated binaries, staged release outputs, or other ephemeral build artifacts into ad hoc repo locations; if a durable fixture is truly required, keep it small, intentional, and in an owned non-hidden test or documentation path
+- for visual elements, reusable UI primitives, and dialog chrome, follow `/app/L0/_all/mod/_core/visual/AGENTS.md` as the binding contract instead of inventing feature-local alternatives when the shared visual system already covers the need
 
 ## Top-Level Structure
 

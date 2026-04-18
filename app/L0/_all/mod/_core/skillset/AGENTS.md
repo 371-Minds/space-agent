@@ -40,7 +40,7 @@ Update rules:
 This module owns:
 
 - `ext/skills/development/`: the shared first-party frontend development skill tree and its helper scripts, including `modules-routing/panel-tools.js`
-- `ext/skills/browser-control/SKILL.md`: the top-level onscreen skill for controlling floating browser windows through `space.browser`
+- `ext/skills/browser-control/SKILL.md`: the top-level onscreen skill for controlling floating browser windows through `space.browser`, including numeric browser ids, reference-marked page captures, and ref-targeted browser actions
 - `ext/skills/file-download/SKILL.md`: the top-level onscreen skill for downloading app files, generated files, or external URLs
 - `ext/skills/pdf-report/SKILL.md` plus `ext/skills/pdf-report/pdf-report.js`: the top-level onscreen skill for browser-generated PDF creation and download, plus its generic structured-report and HTML-to-PDF helper
 - `ext/skills/screenshots/SKILL.md` plus `ext/skills/screenshots/screenshots.js`: the top-level onscreen skill for page or element screenshots, plus its browser capture helper

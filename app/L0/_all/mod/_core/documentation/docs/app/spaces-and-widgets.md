@@ -15,8 +15,9 @@ This doc covers the spaces runtime because it is one of the most important agent
 - `app/L0/_all/mod/_core/spaces/ext/skills/spaces/SKILL.md`
 - `app/L0/_all/mod/_core/spaces/storage.js`
 - `app/L0/_all/mod/_core/spaces/store.js`
+- `app/L0/_all/mod/_core/spaces/view.html`
+- `app/L0/_all/mod/_core/spaces/spaces.css`
 - `app/L0/_all/mod/_core/spaces/space-share-modal.js`
-- `app/L0/_all/mod/_core/spaces/space-share-modal.html`
 
 ## Storage Layout
 
@@ -54,7 +55,7 @@ Current behaviors:
 - `Download ZIP` always exports the current `~/spaces/<spaceId>/` folder as a ZIP archive
 - `Upload ZIP` always validates through the backend import endpoint; if the current space already has meaningful content, the modal asks whether to overwrite that current space or keep it and import as a new `imported-N` space
 - imported destinations ignore the incoming archive id or title for naming; non-overwrite imports are always installed as `imported-1`, `imported-2`, and so on
-- when `CLOUD_SHARE_URL` resolves to a base URL, the same modal can also upload the current space ZIP to that hosted receiver and return a share link
+- when `CLOUD_SHARE_URL` resolves to a base URL, the same native spaces dialog shows the hosted-share panel first, uploads the current space ZIP to that receiver, returns the share link in an inline copy field, and keeps any hosted-share errors inside that panel while logging the underlying exception to the console
 - the hosted-share branch can optionally encrypt the ZIP in the browser with a password before upload, using the same public `share-crypto` helper as the public share-open page
 - local ZIP export and import stay available even when hosted sharing is disabled or the remote receiver rejects uploads
 

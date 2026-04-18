@@ -54,11 +54,29 @@ const WINDOW_TOP_RESERVE_EM = 4.5;
 const DEFAULT_HEIGHT_RATIO = 0.8;
 const DEFAULT_MAX_HEIGHT_EM = 100;
 const ROUTER_STAGE_APPROX_MAX_WIDTH_REM = 84;
+const AGENT_BROWSER_INTERACTION_MESSAGE_TYPES = new Set([
+  "click",
+  "history_back",
+  "history_forward",
+  "location_navigate",
+  "location_reload",
+  "scroll",
+  "submit",
+  "type",
+  "type_submit"
+]);
 
 let nextWindowZIndex = 2147481200;
+let nextBrowserWindowInstanceKey = 1;
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
+}
+
+function getNextBrowserWindowInstanceKey() {
+  const currentKey = nextBrowserWindowInstanceKey;
+  nextBrowserWindowInstanceKey += 1;
+  return currentKey;
 }
 
 function roundPx(value, fallback = 0) {
@@ -271,6 +289,37 @@ function getRuntime() {
   return runtime;
 }
 
+function shouldRememberAgentBrowserInteraction(type) {
+  return AGENT_BROWSER_INTERACTION_MESSAGE_TYPES.has(String(type || "").trim());
+}
+
+function normalizeAgentBrowserId(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const ordinal = Math.trunc(value);
+    return ordinal > 0 ? `${BROWSER_WINDOW_ID_PREFIX}${ordinal}` : "";
+  }
+
+  const normalizedValue = String(value || "").trim();
+  if (!normalizedValue) {
+    return "";
+  }
+
+  if (/^\d+$/u.test(normalizedValue)) {
+    const ordinal = Number.parseInt(normalizedValue, 10);
+    return Number.isInteger(ordinal) && ordinal > 0
+      ? `${BROWSER_WINDOW_ID_PREFIX}${ordinal}`
+      : "";
+  }
+
+  const ordinal = extractBrowserWindowOrdinal(normalizedValue);
+  return ordinal ? `${BROWSER_WINDOW_ID_PREFIX}${ordinal}` : normalizedValue;
+}
+
+function toAgentBrowserId(value) {
+  const ordinal = extractBrowserWindowOrdinal(value);
+  return ordinal ?? String(value || "").trim();
+}
+
 function buildRuntimeBrowserWindowSnapshot(browserWindow) {
   if (!browserWindow || typeof browserWindow !== "object") {
     return null;
@@ -278,6 +327,7 @@ function buildRuntimeBrowserWindowSnapshot(browserWindow) {
 
   return {
     ...browserWindow,
+    id: toAgentBrowserId(browserWindow.id),
     position: browserWindow.position && typeof browserWindow.position === "object"
       ? { ...browserWindow.position }
       : browserWindow.position,
@@ -313,7 +363,8 @@ function normalizeCreateWindowOptions(value) {
 }
 
 function createRuntimeBrowserHandle(store, id) {
-  const normalizedId = String(id || "").trim();
+  const normalizedId = normalizeAgentBrowserId(id);
+  const agentId = toAgentBrowserId(normalizedId);
 
   if (!normalizedId) {
     return null;
@@ -341,6 +392,18 @@ function createRuntimeBrowserHandle(store, id) {
       requireWindow();
       store.closeWindow(normalizedId);
     }),
+    content: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (payload = null, options = {}) => {
+      requireWindow();
+      return sendBrowserFrameMessage(normalizedId, "content", payload, options);
+    }),
+    detail: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (referenceId, options = {}) => {
+      requireWindow();
+      return sendBrowserFrameMessage(normalizedId, "detail", referenceId, options);
+    }),
+    dom: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (payload = null, options = {}) => {
+      requireWindow();
+      return sendBrowserFrameMessage(normalizedId, "dom", payload, options);
+    }),
     focus: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (options = {}) => {
       requireWindow();
       store.focusWindow(normalizedId, options);
@@ -351,20 +414,40 @@ function createRuntimeBrowserHandle(store, id) {
       return store.goForward(normalizedId);
     }),
     get id() {
-      return normalizedId;
+      return agentId;
     },
     navigate: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (url) => {
       requireWindow();
+      store.rememberBrowserInteraction(normalizedId, "location_navigate");
       store.updateAddressValue(normalizedId, String(url ?? ""));
       return store.navigateToAddress(normalizedId);
     }),
+    click: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (referenceId) => {
+      requireWindow();
+      store.rememberBrowserInteraction(normalizedId, "click");
+      return sendBrowserFrameMessage(normalizedId, "click", referenceId);
+    }),
     reload: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, () => {
       requireWindow();
+      store.rememberBrowserInteraction(normalizedId, "location_reload");
       return store.reloadFrame(normalizedId);
     }),
     send: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (type, payload = null, options = {}) => {
       requireWindow();
+      if (shouldRememberAgentBrowserInteraction(type)) {
+        store.rememberBrowserInteraction(normalizedId, type);
+      }
       return sendBrowserFrameMessage(normalizedId, type, payload, options);
+    }),
+    scroll: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (referenceId) => {
+      requireWindow();
+      store.rememberBrowserInteraction(normalizedId, "scroll");
+      return sendBrowserFrameMessage(normalizedId, "scroll", referenceId);
+    }),
+    submit: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (referenceId) => {
+      requireWindow();
+      store.rememberBrowserInteraction(normalizedId, "submit");
+      return sendBrowserFrameMessage(normalizedId, "submit", referenceId);
     }),
     sync: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (options = {}) => {
       requireWindow();
@@ -373,8 +456,25 @@ function createRuntimeBrowserHandle(store, id) {
     get state() {
       return buildRuntimeBrowserWindowSnapshot(store.getWindow(normalizedId));
     },
+    type: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (referenceId, value = "") => {
+      requireWindow();
+      store.rememberBrowserInteraction(normalizedId, "type");
+      return sendBrowserFrameMessage(normalizedId, "type", {
+        referenceId,
+        value
+      });
+    }),
+    typeSubmit: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (referenceId, value = "") => {
+      requireWindow();
+      store.rememberBrowserInteraction(normalizedId, "type_submit");
+      return sendBrowserFrameMessage(normalizedId, "type_submit", {
+        referenceId,
+        value
+      });
+    }),
     back: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, () => {
       requireWindow();
+      store.rememberBrowserInteraction(normalizedId, "history_back");
       return store.goBack(normalizedId);
     }),
     get window() {
@@ -387,7 +487,7 @@ function ensureBrowserRuntimeNamespace(store) {
   const runtime = getRuntime();
   const previousNamespace = runtime.browser && typeof runtime.browser === "object" ? runtime.browser : {};
   const getHandle = (id) => {
-    const normalizedId = String(id || "").trim();
+    const normalizedId = normalizeAgentBrowserId(id);
 
     if (!normalizedId || !store.getWindow(normalizedId)) {
       return null;
@@ -406,6 +506,7 @@ function ensureBrowserRuntimeNamespace(store) {
   };
   const openHandle = (options = {}) => {
     const id = store.createWindow(normalizeCreateWindowOptions(options));
+    store.rememberBrowserInteraction(id, "open");
     return getHandle(id);
   };
   const namespace = {
@@ -413,8 +514,11 @@ function ensureBrowserRuntimeNamespace(store) {
     back: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id) => {
       return requireHandle(id).back();
     }),
+    click: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id, referenceId) => {
+      return requireHandle(id).click(referenceId);
+    }),
     close: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id) => {
-      const normalizedId = String(id || "").trim();
+      const normalizedId = normalizeAgentBrowserId(id);
 
       if (!normalizedId) {
         return;
@@ -434,6 +538,9 @@ function ensureBrowserRuntimeNamespace(store) {
     count: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, () => {
       return store.windows.length;
     }),
+    content: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id, payload = null, options = {}) => {
+      return requireHandle(id).content(payload, options);
+    }),
     create: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (options = {}) => {
       return openHandle(options);
     }),
@@ -441,8 +548,14 @@ function ensureBrowserRuntimeNamespace(store) {
       const browserWindow = getFrontmostBrowserWindow(store.windows);
       return browserWindow ? getHandle(browserWindow.id) : null;
     }),
+    detail: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id, referenceId, options = {}) => {
+      return requireHandle(id).detail(referenceId, options);
+    }),
+    dom: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id, payload = null, options = {}) => {
+      return requireHandle(id).dom(payload, options);
+    }),
     focus: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id, options = {}) => {
-      const normalizedId = String(id || "").trim();
+      const normalizedId = normalizeAgentBrowserId(id);
 
       if (!normalizedId) {
         return null;
@@ -461,7 +574,7 @@ function ensureBrowserRuntimeNamespace(store) {
       return Boolean(getHandle(id));
     }),
     ids: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, () => {
-      return store.windows.map((browserWindow) => browserWindow.id);
+      return store.windows.map((browserWindow) => toAgentBrowserId(browserWindow.id));
     }),
     list: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, () => {
       return store.windows.map((browserWindow) => buildRuntimeBrowserWindowSnapshot(browserWindow));
@@ -475,15 +588,27 @@ function ensureBrowserRuntimeNamespace(store) {
     reload: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id) => {
       return requireHandle(id).reload();
     }),
+    scroll: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id, referenceId) => {
+      return requireHandle(id).scroll(referenceId);
+    }),
     send: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id, type, payload = null, options = {}) => {
-      return sendBrowserFrameMessage(id, type, payload, options);
+      return requireHandle(id).send(type, payload, options);
     }),
     state: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id) => {
-      const browserWindow = store.getWindow(String(id || "").trim());
+      const browserWindow = store.getWindow(normalizeAgentBrowserId(id));
       return buildRuntimeBrowserWindowSnapshot(browserWindow);
+    }),
+    submit: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id, referenceId) => {
+      return requireHandle(id).submit(referenceId);
     }),
     sync: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id, options = {}) => {
       return requireHandle(id).sync(options);
+    }),
+    type: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id, referenceId, value = "") => {
+      return requireHandle(id).type(referenceId, value);
+    }),
+    typeSubmit: guardAgentFunction(AGENT_FUNCTION_REQUIREMENT.NATIVE_APP_ONLY, (id, referenceId, value = "") => {
+      return requireHandle(id).typeSubmit(referenceId, value);
     })
   };
 
@@ -604,9 +729,11 @@ function createBrowserWindowState(id, cascadeIndex = 0, options = {}) {
     currentUrl: frameSrc,
     frameSrc,
     id,
+    instanceKey: getNextBrowserWindowInstanceKey(),
     isMinimized: false,
     position: getDefaultPosition(size, spawnArea, clampArea, cascadeIndex),
     size: { ...size },
+    title: "",
     zIndex: getNextZIndex()
   };
 }
@@ -614,6 +741,8 @@ function createBrowserWindowState(id, cascadeIndex = 0, options = {}) {
 const model = {
   frameConnections: Object.create(null),
   interaction: null,
+  lastInteractedBrowserId: "",
+  lastInteractedBrowserInstanceKey: null,
   offDesktopBrowserHostEvents: null,
   syncTokens: Object.create(null),
   windows: [],
@@ -698,6 +827,17 @@ const model = {
 
   webviewPartition(id) {
     return getDesktopBrowserWebviewPartition(id);
+  },
+
+  rememberBrowserInteraction(id, type = "") {
+    const normalizedId = String(id || "").trim();
+    const browserWindow = normalizedId ? this.getWindow(normalizedId) : null;
+    if (!browserWindow) {
+      return;
+    }
+
+    this.lastInteractedBrowserId = normalizedId;
+    this.lastInteractedBrowserInstanceKey = browserWindow.instanceKey ?? null;
   },
 
   nextSyncToken(id) {
@@ -1293,6 +1433,10 @@ const model = {
 
     if (typeof state.canGoForward === "boolean") {
       browserWindow.canGoForward = state.canGoForward;
+    }
+
+    if ("title" in state) {
+      browserWindow.title = String(state.title || "").trim();
     }
 
     if (options.fromBridge) {

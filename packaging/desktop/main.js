@@ -67,6 +67,7 @@ let lastDesktopUpdateFailureAt = 0;
 let desktopUpdateCheckPromise = null;
 let desktopUpdateDownloadPromise = null;
 let desktopFramePreloadRegistrationId = "";
+let lastSafeMainWindowUrl = "";
 const desktopFrameInjectionRegistry = new Map();
 const desktopBrowserViews = new Map();
 const desktopBrowserViewsByWebContentsId = new Map();
@@ -816,6 +817,98 @@ function applyPackagedDesktopStorageOverrides() {
 
 function resolveDesktopLaunchPath() {
   return serverRuntime?.runtimeParams?.get?.("SINGLE_USER_APP", false) ? "/enter" : "/";
+}
+
+function normalizeDesktopNavigationUrl(value) {
+  const normalized = String(value || "").trim();
+  if (!normalized) {
+    return "";
+  }
+
+  try {
+    return new URL(normalized).href;
+  } catch {
+    return "";
+  }
+}
+
+function resolveDesktopAppOrigin() {
+  try {
+    return new URL(serverRuntime?.browserUrl || "").origin;
+  } catch {
+    return "";
+  }
+}
+
+function isDesktopMainWindowAllowedUrl(value) {
+  const normalizedUrl = normalizeDesktopNavigationUrl(value);
+  const appOrigin = resolveDesktopAppOrigin();
+  if (!normalizedUrl || !appOrigin) {
+    return false;
+  }
+
+  try {
+    return new URL(normalizedUrl).origin === appOrigin;
+  } catch {
+    return false;
+  }
+}
+
+function rememberDesktopSafeMainWindowUrl(value = mainWindow?.webContents?.getURL?.() || "") {
+  const normalizedUrl = normalizeDesktopNavigationUrl(value);
+  if (!isDesktopMainWindowAllowedUrl(normalizedUrl)) {
+    return "";
+  }
+
+  lastSafeMainWindowUrl = normalizedUrl;
+  return lastSafeMainWindowUrl;
+}
+
+function revertDesktopMainWindowToSafeUrl(blockedUrl = "") {
+  if (!mainWindow || mainWindow.isDestroyed()) {
+    return;
+  }
+
+  const safeUrl = rememberDesktopSafeMainWindowUrl()
+    || normalizeDesktopNavigationUrl(lastSafeMainWindowUrl)
+    || normalizeDesktopNavigationUrl(`${serverRuntime?.browserUrl || ""}${resolveDesktopLaunchPath()}`);
+  if (!safeUrl) {
+    return;
+  }
+
+  const currentUrl = normalizeDesktopNavigationUrl(mainWindow.webContents.getURL());
+  if (currentUrl === safeUrl) {
+    return;
+  }
+
+  queueMicrotask(() => {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      return;
+    }
+
+    const liveUrl = normalizeDesktopNavigationUrl(mainWindow.webContents.getURL());
+    if (liveUrl === safeUrl) {
+      return;
+    }
+
+    void mainWindow.webContents.loadURL(safeUrl).catch((error) => {
+      console.error(
+        `[space-desktop] Failed to restore main window after blocked navigation to ${String(blockedUrl || "").trim() || "<unknown>"}.`,
+        error
+      );
+    });
+  });
+}
+
+function blockDesktopMainWindowNavigation(event, url, isMainFrame = true) {
+  if (!isMainFrame || isDesktopMainWindowAllowedUrl(url)) {
+    return false;
+  }
+
+  event.preventDefault();
+  console.warn(`[space-desktop] Blocked main-window navigation away from app origin: ${String(url || "").trim() || "<unknown>"}`);
+  revertDesktopMainWindowToSafeUrl(url);
+  return true;
 }
 
 function showMainWindow() {
@@ -1828,6 +1921,12 @@ function createWindow() {
 
     maybeInjectDesktopFrame(frame, mainWindow?.webContents);
   });
+  mainWindow.webContents.on("will-navigate", (event, url, _isInPlace, isMainFrame = true) => {
+    blockDesktopMainWindowNavigation(event, url, isMainFrame);
+  });
+  mainWindow.webContents.on("will-redirect", (event, url, _isInPlace, isMainFrame = true) => {
+    blockDesktopMainWindowNavigation(event, url, isMainFrame);
+  });
   mainWindow.webContents.on("will-attach-webview", (event, webPreferences, params) => {
     const browserId = getDesktopBrowserIdFromWebviewPartition(params?.partition);
     if (!browserId) {
@@ -1867,19 +1966,31 @@ function createWindow() {
     refreshDesktopWindowTitle();
   });
 
+  mainWindow.webContents.on("did-navigate", (_event, url) => {
+    rememberDesktopSafeMainWindowUrl(url);
+  });
+  mainWindow.webContents.on("did-navigate-in-page", (_event, url, isMainFrame = true) => {
+    if (isMainFrame === false) {
+      return;
+    }
+
+    rememberDesktopSafeMainWindowUrl(url);
+  });
   mainWindow.webContents.on("did-finish-load", () => {
+    rememberDesktopSafeMainWindowUrl();
     desktopPageTitle = normalizeDesktopWindowTitle(mainWindow?.webContents?.getTitle?.() || desktopPageTitle);
     refreshDesktopWindowTitle();
     flushDesktopRendererLogs();
     mainWindow.webContents.send("space-desktop:update-status", desktopUpdateState);
   });
-  mainWindow.webContents.on("did-start-navigation", (_event, _url, _isInPlace, isMainFrame) => {
-    if (isMainFrame) {
+  mainWindow.webContents.on("did-start-navigation", (_event, url, _isInPlace, isMainFrame) => {
+    if (isMainFrame && isDesktopMainWindowAllowedUrl(url)) {
       destroyAllDesktopBrowserViews();
     }
   });
 
-  mainWindow.loadURL(`${serverRuntime.browserUrl}${resolveDesktopLaunchPath()}`);
+  lastSafeMainWindowUrl = normalizeDesktopNavigationUrl(`${serverRuntime.browserUrl}${resolveDesktopLaunchPath()}`);
+  mainWindow.loadURL(lastSafeMainWindowUrl);
   return mainWindow;
 }
 

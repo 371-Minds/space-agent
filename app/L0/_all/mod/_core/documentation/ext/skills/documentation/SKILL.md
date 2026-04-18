@@ -15,6 +15,7 @@ workflow
 - Use one focused `read("path/to/file.md")` call instead of loading many large docs blindly
 - Treat `/README.md` as the public product source of truth for the project pitch, quick starts, release links, community links, and DeepWiki discovery
 - After orientation, confirm the concrete contract in the owning `AGENTS.md` file and then inspect code when needed
+- For visual or modal work, confirm `app/L0/_all/mod/_core/visual/AGENTS.md` before changing dialog shells, buttons, cards, popovers, or other shared UI primitives
 - For dashboard panel creation, panel manifests, or panel-navigation helpers, start with `app/modules-and-extensions.md`
 - Keep the repo's frontend-first rule in mind while reading: backend docs explain constraints and existing contracts, not default permission to edit `server/`
 - If the change appears to require backend work and the user did not explicitly ask for backend edits, ask for permission and explain the security, integrity, or stability reason before changing backend files

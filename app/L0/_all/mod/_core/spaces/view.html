@@ -138,6 +138,177 @@
                 </section>
               </div>
             </template>
+
+            <template x-teleport="body">
+              <div class="space-dialog-layer">
+                <dialog
+                  class="chat-dialog"
+                  x-ref="shareDialog"
+                  x-init="$store.spacesShareModal.mount({ shareDialog: $el })"
+                  x-destroy="$store.spacesShareModal.unmount()"
+                  @cancel.prevent="$store.spacesShareModal.closeShareDialog()"
+                >
+                  <div class="dialog-card dialog-card-shell spaces-share-dialog">
+                    <header class="dialog-header">
+                      <div>
+                        <p class="page-eyebrow">Current Space</p>
+                        <h2 x-text="$store.spacesShareModal.spaceTitle"></h2>
+                      </div>
+                    </header>
+
+                    <div class="dialog-scroll-body">
+                      <div class="spaces-share-stack">
+                        <p class="field-note">Create a hosted share link, or move the current space around as a ZIP.</p>
+
+                        <section class="space-card spaces-share-panel" x-show="$store.spacesShareModal.canShareToCloud" x-cloak>
+                          <div class="spaces-share-copy-block">
+                            <p class="page-eyebrow">Hosted Share</p>
+                            <h3>Share via <span x-text="$store.spacesShareModal.cloudShareHostLabel"></span></h3>
+                            <p class="field-note">Create a public guest-share link. Add a password to encrypt the ZIP in the browser before upload.</p>
+                          </div>
+
+                          <label class="field">
+                            <span>Optional password</span>
+                            <input
+                              type="password"
+                              placeholder="Leave blank for an open share"
+                              autocomplete="new-password"
+                              x-model="$store.spacesShareModal.cloudSharePassword"
+                            />
+                          </label>
+
+                          <div class="dialog-actions spaces-share-actions">
+                            <button
+                              type="button"
+                              class="primary-button"
+                              :disabled="$store.spacesShareModal.isBusy"
+                              @click="void $store.spacesShareModal.shareToCloud()"
+                            >
+                              Create Share Link
+                            </button>
+                          </div>
+
+                          <template x-if="$store.spacesShareModal.hasShareUrl">
+                            <div class="spaces-share-result">
+                              <label class="field">
+                                <span>Share link</span>
+                                <div class="spaces-share-link-field">
+                                  <input
+                                    x-ref="shareUrl"
+                                    type="text"
+                                    readonly
+                                    :value="$store.spacesShareModal.shareUrl"
+                                    @focus="$event.target.select()"
+                                  />
+                                  <button
+                                    type="button"
+                                    class="secondary-button dialog-icon-button"
+                                    :disabled="!$store.spacesShareModal.hasShareUrl || $store.spacesShareModal.isBusy"
+                                    title="Copy share link"
+                                    aria-label="Copy share link"
+                                    @click="void $store.spacesShareModal.copyShareUrl($refs.shareUrl)"
+                                  >
+                                    <x-icon>content_copy</x-icon>
+                                  </button>
+                                </div>
+                              </label>
+
+                              <div class="dialog-actions spaces-share-actions">
+                                <button
+                                  type="button"
+                                  class="secondary-button"
+                                  :disabled="!$store.spacesShareModal.hasShareUrl || $store.spacesShareModal.isBusy"
+                                  @click="$store.spacesShareModal.openShareUrl()"
+                                >
+                                  <x-icon>open_in_new</x-icon>
+                                  <span>Open link</span>
+                                </button>
+                              </div>
+                            </div>
+                          </template>
+
+                          <p
+                            x-cloak
+                            x-show="$store.spacesShareModal.cloudStatusText"
+                            class="dialog-note spaces-share-note"
+                            x-text="$store.spacesShareModal.cloudStatusText"
+                          ></p>
+                          <p
+                            x-cloak
+                            x-show="$store.spacesShareModal.cloudErrorText"
+                            class="dialog-note spaces-share-note is-error"
+                            x-text="$store.spacesShareModal.cloudErrorText"
+                          ></p>
+                        </section>
+
+                        <section class="space-card spaces-share-panel">
+                          <div class="spaces-share-copy-block">
+                            <p class="page-eyebrow">ZIP Transfer</p>
+                            <h3>Download or upload ZIP</h3>
+                            <p class="field-note">Download the current space as a ZIP, or import a ZIP into this space. Imports can replace the current space or land as a new <code>imported-N</code> space.</p>
+                          </div>
+
+                          <div class="space-action-grid">
+                            <button
+                              type="button"
+                              class="space-action-card"
+                              :disabled="$store.spacesShareModal.isBusy"
+                              @click="void $store.spacesShareModal.downloadZip()"
+                            >
+                              <x-icon>download</x-icon>
+                              <span class="space-action-card-copy">
+                                <strong>Download ZIP</strong>
+                                <span>Save the full current space folder as a ZIP archive.</span>
+                              </span>
+                            </button>
+
+                            <button
+                              type="button"
+                              class="space-action-card"
+                              :disabled="$store.spacesShareModal.isBusy"
+                              @click="$store.spacesShareModal.chooseImportFile($refs.upload)"
+                            >
+                              <x-icon>upload_file</x-icon>
+                              <span class="space-action-card-copy">
+                                <strong>Upload ZIP</strong>
+                                <span>Import a ZIP and decide whether to replace this space or keep both.</span>
+                              </span>
+                            </button>
+                          </div>
+
+                          <input
+                            x-ref="upload"
+                            hidden
+                            type="file"
+                            accept=".zip,application/zip"
+                            @change="void $store.spacesShareModal.handleImportFileChange($event)"
+                          />
+
+                          <p
+                            x-cloak
+                            x-show="$store.spacesShareModal.archiveStatusText"
+                            class="dialog-note spaces-share-note"
+                            x-text="$store.spacesShareModal.archiveStatusText"
+                          ></p>
+                          <p
+                            x-cloak
+                            x-show="$store.spacesShareModal.archiveErrorText"
+                            class="dialog-note spaces-share-note is-error"
+                            x-text="$store.spacesShareModal.archiveErrorText"
+                          ></p>
+                        </section>
+                      </div>
+                    </div>
+
+                    <div class="dialog-actions">
+                      <button type="button" class="secondary-button" :disabled="$store.spacesShareModal.isBusy" @click="void $store.spacesShareModal.closeShareDialog()">
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </dialog>
+              </div>
+            </template>
           </div>
         </template>
       </template>

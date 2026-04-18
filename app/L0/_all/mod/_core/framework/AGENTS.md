@@ -15,7 +15,7 @@ This module owns:
 - `js/initFw.js`: shared frontend bootstrap entry for framework-backed pages
 - `js/initializer.js`: extensible shared bootstrap step that runs before Alpine startup
 - `js/runtime.js`: runtime installation onto `globalThis.space`
-- `js/new-window.js`: framework-wide same-origin `_blank` handling that lets app-opened new windows skip the `/enter` launcher guard while manual browser-opened windows still route through `/enter`
+- `js/new-window.js`: framework-wide navigation interception for framework-backed pages; it grants `/enter` tab access to same-origin `_blank` opens for `/` and `/admin`, uses the Navigation API `navigate` event when available to catch cancelable current-tab navigations initiated through links, forms, or `window.location`, reroutes best-effort current-tab cross-origin anchor or `window.open(..., "_self")` navigations into a new browser tab during web runtime, and patches `Location.assign(...)`, `Location.replace(...)`, plus `Location.href` where the browser allows it so packaged desktop runs can block same-tab host escapes before the Electron main-process origin guard has to recover
 - `js/context.js`: generic `<x-context>` collection helpers plus the framework-owned runtime sync that injects one hidden `data-runtime="browser|app"` context element with a derived `runtime-browser` or `runtime-app` tag on framework-backed pages
 - `js/markdown-frontmatter.js`: markdown frontmatter parsing plus safe markdown-to-DOM rendering helpers
 - `js/yaml-lite.js`: project-owned lightweight YAML parser and serializer shared directly by browser runtime helpers, server modules, and agent-surface param parsers
@@ -24,6 +24,7 @@ This module owns:
 - `js/extensions.js`: `space.extend`, HTML extension loading, the framework-managed `_core/framework/head/end` head seam, JS hook loading, lookup caching, and batching
 - `js/moduleResolution.js`: propagation of `maxLayer` into framework-managed module and extension requests
 - `js/components.js`: `<x-component>` loading, recursive component imports, and `xAttrs(...)`
+- `js/modals.js`: the generic framework modal wrapper used for separately loaded modal documents that are not mounted as feature-owned native dialogs
 - `js/AlpineStore.js`: store registration helper used by the runtime and legacy modules
 - `js/chat-messages.js`: shared chat-request message folding helpers that collapse consecutive `user` or `assistant` payload turns into alternating messages with blank-line joins
 - Alpine directives and magic helpers registered during bootstrap, including delayed-target `x-inject`
@@ -39,7 +40,7 @@ Current boot order:
 
 1. `initFw.js` imports `extensions.js` first so `space.extend` exists before other framework modules expose seams and so the framework-managed head HTML seam is present before the initial extension scan.
 2. `initializeRuntime(...)` publishes the shared runtime onto `globalThis.space`.
-3. `initializer.initialize()` runs the first extensible framework bootstrap step, installs the framework new-window handler, and injects the framework-owned runtime context tag.
+3. `initializer.initialize()` runs the first extensible framework bootstrap step, installs the framework navigation guard, and injects the framework-owned runtime context tag.
 4. Alpine and framework support modules are loaded.
 5. Framework directives and magic helpers are registered.
 
@@ -87,7 +88,8 @@ Rules:
 - if bootstrap order changes, update this doc and `/app/AGENTS.md`
 - shell-level one-time setup that can stay declarative, such as inline analytics bootstrap or static `document.head` tags, should prefer the framework-managed `_core/framework/head/end` HTML seam instead of page-shell edits
 - shell-level one-time setup that must stay imperative should prefer the shared `_core/framework/initializer.js/initialize/end` JS hook instead of page-shell edits
-- same-origin `/` and `/admin` URLs opened with `_blank` from framework-backed pages are handled centrally by `js/new-window.js`: normal left-clicks on `target="_blank"` links and `window.open(..., "_blank")` receive the current tab's `/enter` access in the child window before navigation, while context-menu opens, middle-clicks, and modifier-key opens are not intercepted and still route through `/enter`
+- ordinary authenticated feature dialogs must not route through `js/modals.js`; they should stay feature-owned native `<dialog class="chat-dialog">` surfaces using `_core/visual/forms/dialog.css` plus `forms/dialog.js`, while `js/modals.js` stays reserved for generic separately loaded modal documents or platform utilities that truly need it
+- framework-backed pages centralize navigation interception in `js/new-window.js`: same-origin `/` and `/admin` URLs opened with `_blank` through normal left-clicks or `window.open(..., "_blank")` receive the current tab's `/enter` access in the child window before navigation, while same-tab cross-origin `http(s)` navigations are first blocked through the Navigation API `navigate` event when that event exists and is cancelable, and otherwise fall back to interception of anchor clicks, `window.open(..., "_self")`, and best-effort `Location.assign(...)`, `Location.replace(...)`, or `Location.href = ...` writes; web runtime tries to move those cross-origin requests into a new browser tab, while packaged desktop runtime blocks them in-place and relies on the Electron host as the hard guarantee; location-bar navigations, manual browser opens such as context-menu or middle-click or modifier-key opens, non-cancelable navigation events, and any browser engines that refuse the location patches still fall back to the page-shell or host guard
 
 ## Extension And Component System
 
