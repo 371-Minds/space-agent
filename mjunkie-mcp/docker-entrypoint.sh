@@ -1,12 +1,17 @@
 #!/bin/sh
 # Start the Sovereign Engine (json-server) in background, then start MCP server.
-# Propagates SIGTERM/SIGINT to both child processes on exit.
+# Kills both child processes on SIGTERM/SIGINT and when either child exits first.
 set -e
 
 cleanup() {
   echo "[mjunkie-mcp] Shutting down..."
   if [ -n "$JSON_SERVER_PID" ]; then
     kill "$JSON_SERVER_PID" 2>/dev/null || true
+    wait "$JSON_SERVER_PID" 2>/dev/null || true
+  fi
+  if [ -n "$MCP_PID" ]; then
+    kill "$MCP_PID" 2>/dev/null || true
+    wait "$MCP_PID" 2>/dev/null || true
   fi
   exit 0
 }
@@ -20,6 +25,15 @@ echo "[mjunkie-mcp] Starting MCP server..."
 node dist/index.js &
 MCP_PID=$!
 
-# Wait for either process to exit; clean up the other
-wait "$MCP_PID" "$JSON_SERVER_PID"
-cleanup
+# Poll until either child exits, then trigger cleanup of the other
+while true; do
+  if ! kill -0 "$JSON_SERVER_PID" 2>/dev/null; then
+    echo "[mjunkie-mcp] Sovereign Engine exited unexpectedly."
+    cleanup
+  fi
+  if ! kill -0 "$MCP_PID" 2>/dev/null; then
+    echo "[mjunkie-mcp] MCP server exited."
+    cleanup
+  fi
+  sleep 1
+done

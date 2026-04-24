@@ -18,7 +18,7 @@ This file tracks implementation progress against the phases in `docs/PLAN.md`.
   - [x] `update_beat_status` – PATCH/POST to update beat status
   - [x] `track_finances` – aggregate asset credits and ROI
 - [x] Expose `db.json` as MCP Resource (`sovereign://db`)
-- [x] Write Phase 1 tests (`tests/mjunkie-mcp/phase1.test.mjs`)
+- [x] Write Phase 1 tests (`mjunkie-mcp/tests/phase1.test.mjs`)
 - [x] Update `README.md` with mjunkie-mcp section
 - [x] Update `AGENTS.md` with mjunkie-mcp index entry
 
@@ -30,7 +30,7 @@ This file tracks implementation progress against the phases in `docs/PLAN.md`.
 - [x] Implement `get_brand_guidelines` MCP tool (`src/tools/brand.ts`)
 - [x] Implement `get_color_palette` MCP tool
 - [x] Expose MCP resource `brand://multimedia-junkie/guidelines`
-- [x] Write Phase 2 tests (`tests/mjunkie-mcp/phase2.test.mjs`)
+- [x] Write Phase 2 tests (`mjunkie-mcp/tests/phase2.test.mjs`)
 - [x] Update `README.md` with brand system notes
 - [x] Update `AGENTS.md` brand system notes
 
@@ -47,7 +47,7 @@ This file tracks implementation progress against the phases in `docs/PLAN.md`.
   - [x] `command_center` mode (12×8 grid)
   - [x] `spatial_floating` mode (3D depth-layered)
 - [x] Implement `update_widget_state` tool
-- [x] Write Phase 3 tests (`tests/mjunkie-mcp/phase3.test.mjs`)
+- [x] Write Phase 3 tests (`mjunkie-mcp/tests/phase3.test.mjs`)
 - [x] Update `README.md` and `AGENTS.md`
 
 ---
@@ -57,7 +57,7 @@ This file tracks implementation progress against the phases in `docs/PLAN.md`.
 - [x] Implement `mimi_strategic_query` (`src/tools/personas.ts`)
 - [x] Implement `zara_tech_query`
 - [x] Implement `maya_finance_query`
-- [x] Write Phase 4 tests (`tests/mjunkie-mcp/phase4.test.mjs`)
+- [x] Write Phase 4 tests (`mjunkie-mcp/tests/phase4.test.mjs`)
 - [x] Update `README.md` and `AGENTS.md`
 
 ---

@@ -116,8 +116,12 @@ export async function handleZaraTechQuery(
   baseUrl = SOVEREIGN_ENGINE_BASE_URL,
 ): Promise<ToolResult> {
   try {
-    const page = args.page ?? 1;
-    const pageSize = args.page_size ?? 10;
+    const page = Math.max(1, Math.trunc(args.page ?? 1));
+    const pageSize = Math.max(1, Math.trunc(args.page_size ?? 10));
+
+    if (!Number.isFinite(page) || !Number.isFinite(pageSize)) {
+      return err('Invalid pagination parameters: page and page_size must be finite numbers >= 1.');
+    }
 
     const [characters, allBeats] = await Promise.all([
       fetchSovereign('/characters', undefined, baseUrl) as Promise<unknown[]>,

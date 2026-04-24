@@ -23,5 +23,9 @@ services:
         condition: service_healthy
     environment:
       - SOVEREIGN_ENGINE_URL=http://sovereign-engine:3000
+    # Override the entrypoint to run the MCP server only; json-server is the
+    # sovereign-engine service above. This avoids starting a second json-server
+    # instance inside the container.
+    entrypoint: ["node", "dist/index.js"]
     stdin_open: true
     tty: true

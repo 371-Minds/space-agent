@@ -3,11 +3,12 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev
+# Install all deps (including devDeps) so tsc is available, then prune after build
+RUN npm ci
 
 COPY tsconfig.json ./
 COPY src ./src
-RUN npx tsc
+RUN npx tsc && npm prune --omit=dev
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────────────
 FROM node:20-alpine AS runtime

@@ -94,16 +94,33 @@ function err(message: string): ToolResult {
   };
 }
 
+/** Validate that an endpoint is a plain path with no scheme or host. */
+function normalizeSovereignEndpoint(endpoint: string): string {
+  if (!endpoint.startsWith('/')) {
+    throw new Error('Sovereign endpoint must start with "/"');
+  }
+  if (endpoint.startsWith('//')) {
+    throw new Error('Sovereign endpoint must be a path, not a protocol-relative URL');
+  }
+  if (/^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(endpoint)) {
+    throw new Error('Sovereign endpoint must be a path, not an absolute URL');
+  }
+  return endpoint;
+}
+
 /**
  * Fetch from the Sovereign Engine json-server.
  * Exported for testability with a mock base URL.
+ * Endpoint must be a plain path (e.g. "/beats") to prevent SSRF.
  */
 export async function fetchSovereign(
   endpoint: string,
   params?: Record<string, string>,
   baseUrl = SOVEREIGN_ENGINE_BASE_URL,
 ): Promise<unknown> {
-  const url = new URL(endpoint, baseUrl);
+  const normalizedEndpoint = normalizeSovereignEndpoint(endpoint);
+  const url = new URL(baseUrl);
+  url.pathname = normalizedEndpoint;
   if (params) {
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
   }
@@ -124,13 +141,26 @@ export async function handleQueryContent(
   }
 }
 
+const BEAT_STATUSES = ['needs_update', 'in_progress', 'completed', 'failed'] as const;
+type BeatStatus = (typeof BEAT_STATUSES)[number];
+
+function isBeatStatus(status: string): status is BeatStatus {
+  return (BEAT_STATUSES as readonly string[]).includes(status);
+}
+
 export async function handleUpdateBeatStatus(
   args: { beat_id: string; status: string },
   baseUrl = SOVEREIGN_ENGINE_BASE_URL,
 ): Promise<ToolResult> {
+  if (!isBeatStatus(args.status)) {
+    return err(
+      `Invalid beat status: "${args.status}". Allowed values: ${BEAT_STATUSES.join(', ')}`,
+    );
+  }
   try {
-    const url = new URL(`/beats/${args.beat_id}`, baseUrl).toString();
-    const res = await fetch(url, {
+    const url = new URL(baseUrl);
+    url.pathname = `/beats/${args.beat_id}`;
+    const res = await fetch(url.toString(), {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: args.status }),

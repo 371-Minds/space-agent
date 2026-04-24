@@ -2,7 +2,7 @@
 
 > **Skill type:** MCP Server  
 > **Server name:** `mjunkie-mcp`  
-> **Transport:** stdio (local) or HTTP (hosted)
+> **Transport:** stdio (local)
 
 ---
 

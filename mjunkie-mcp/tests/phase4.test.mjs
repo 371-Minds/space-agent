@@ -132,6 +132,20 @@ describe('Phase 4 – zara_tech_query', () => {
     assert.equal(data.needs_update_beats.items.length, 1);
     assert.equal(data.needs_update_beats.total_pages, 2);
   });
+
+  it('clamps page_size: 0 to 1 (no invalid pagination)', async () => {
+    const result = await handleZaraTechQuery({ page: 1, page_size: 0 }, mockBaseUrl);
+    const data = JSON.parse(result.content[0].text);
+    // page_size 0 is clamped to 1; total_pages should be a finite integer
+    assert.ok(Number.isFinite(data.needs_update_beats.total_pages));
+    assert.ok(data.needs_update_beats.page_size >= 1);
+  });
+
+  it('clamps negative page to 1', async () => {
+    const result = await handleZaraTechQuery({ page: -5, page_size: 10 }, mockBaseUrl);
+    const data = JSON.parse(result.content[0].text);
+    assert.equal(data.needs_update_beats.page, 1);
+  });
 });
 
 // ─── CFO Maya ─────────────────────────────────────────────────────────────────

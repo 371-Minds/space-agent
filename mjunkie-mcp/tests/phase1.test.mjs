@@ -163,4 +163,51 @@ describe('Phase 1 – fetchSovereign', () => {
       /ECONNREFUSED|fetch/i,
     );
   });
+
+  it('rejects endpoint without leading slash (SSRF guard)', async () => {
+    await assert.rejects(
+      () => fetchSovereign('beats', undefined, mockBaseUrl),
+      /must start with/i,
+    );
+  });
+
+  it('rejects protocol-relative endpoint (SSRF guard)', async () => {
+    await assert.rejects(
+      () => fetchSovereign('//evil.example.com/beats', undefined, mockBaseUrl),
+      /protocol-relative/i,
+    );
+  });
+
+  it('rejects absolute URL as endpoint (SSRF guard)', async () => {
+    await assert.rejects(
+      () => fetchSovereign('https://evil.example.com/beats', undefined, mockBaseUrl),
+      /must start with/i,
+    );
+  });
+});
+
+describe('Phase 1 – update_beat_status input validation', () => {
+  it('returns error for unknown status value', async () => {
+    const result = await handleUpdateBeatStatus(
+      { beat_id: 'beat_001', status: 'hacked' },
+      mockBaseUrl,
+    );
+    const data = JSON.parse(result.content[0].text);
+    assert.ok('error' in data);
+    assert.ok(data.error.includes('Invalid beat status'));
+  });
+
+  it('accepts all four valid status values', async () => {
+    for (const status of ['needs_update', 'completed', 'failed', 'in_progress']) {
+      const result = await handleUpdateBeatStatus(
+        { beat_id: 'beat_001', status },
+        mockBaseUrl,
+      );
+      const data = JSON.parse(result.content[0].text);
+      // Should not have an "Invalid beat status" error
+      if ('error' in data) {
+        assert.ok(!data.error.includes('Invalid beat status'), `Unexpected error for status ${status}: ${data.error}`);
+      }
+    }
+  });
 });
