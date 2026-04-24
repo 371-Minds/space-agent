@@ -71,5 +71,5 @@ This MCP server will provide tools and resources across three core pillars:
 
 - [ ] **Dockerization:** Containerize the MCP server alongside the `json-server` instance.
 - [ ] **GitHub Actions Sync:** Implement the automated monitoring system to track upstream `db.json` changes.
-- [ ] **Vercel/Railway Configs:** Write deployment configurations for seamless hosting of the Sovereign Engine and MCP endpoint.
+- [ ] **Vercel/Akash/Render Network Configs:** Write deployment configurations for seamless hosting of the Sovereign Engine and MCP endpoint.
 - [ ] **Documentation:** Finalize `README.md` and `SKILL.md` (for Space Agent) describing how to consume the `mjunkie-mcp` server.
