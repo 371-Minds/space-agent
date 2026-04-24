@@ -130,6 +130,8 @@ Browser-harness and packaged-desktop tests also need the optional packaging depe
 
 ```bash
 npm run install:packaging
+# optional Bun-compatible install path
+cd packaging && bun install
 ```
 
 ### For production

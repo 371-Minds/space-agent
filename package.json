@@ -13,6 +13,7 @@
     "start": "node space serve",
     "dev": "node server/dev_server.js",
     "install:packaging": "npm install --prefix packaging",
+    "install:packaging:bun": "cd packaging && bun install",
     "desktop:dev": "node packaging/scripts/desktop-dev-run.js",
     "desktop:pack": "node packaging/scripts/host-package.js --dir",
     "desktop:dist": "node packaging/scripts/host-package.js",

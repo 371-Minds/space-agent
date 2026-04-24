@@ -234,7 +234,8 @@ Project concepts:
 - `.vscode/launch.json` provides a `Dev Server (npm run dev)` debugger entry that launches the local dev supervisor and auto-attaches to its spawned `node space serve` child so `server/` breakpoints keep working after watcher restarts
 - `node space serve` to run the server directly
 - `node space supervise CUSTOMWARE_PATH=<path>` to run the production-ready zero-downtime auto-update supervisor for source checkouts
-- `npm run install:packaging` to install packaging-only dependencies
+- `npm run install:packaging` to install packaging-only dependencies through the canonical npm lockfile
+- `cd packaging && bun install` as an optional local compatibility check for packaging-only dependencies while npm remains the canonical install path
 - `npm run desktop:dev`, `npm run desktop:pack`, `npm run desktop:dist`, and `npm run package:desktop:macos:dev` for the Electron host and packaging flow, with the macOS dev build command producing the default unpacked local `.app` bundle
 - `.github/workflows/release-desktop.yml` builds tagged desktop releases for Windows, macOS, and Linux on both x64 and arm64; automatic tag runs and manual `workflow_dispatch` reruns both require the selected `v*` tag to be on `main` history, and both skip only when a newer `v*` tag is already on `main` after it; every publish updates the GitHub Release for that tag before uploading clobbered artifacts selected by `packaging/release-asset-filters.yaml` with uniform `Space-Agent-<release version>-<platform>-<arch>.<extension>` asset names that collapse a redundant trailing `.0` patch to the project's normal two-segment release version
 

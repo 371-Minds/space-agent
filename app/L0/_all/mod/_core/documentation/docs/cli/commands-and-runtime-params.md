@@ -74,6 +74,16 @@ Current behavior:
 - leaves the watcher process alive when the child exits so the next file change can restart the server again
 - has a checked-in VS Code launch entry at `.vscode/launch.json` named `Dev Server (npm run dev)`; that launch config starts the same watcher and auto-attaches to spawned child Node processes so breakpoints in `server/` code still bind after auto-restarts
 
+## Packaging Dependency Install Helper
+
+The repo keeps desktop-packaging build dependencies out of the root install.
+
+Current behavior:
+
+- `npm run install:packaging` is the canonical helper and refreshes `packaging/package-lock.json`
+- `cd packaging && bun install` is an optional local compatibility path for Bun-managed `node_modules`
+- npm remains the authoritative lockfile policy for the packaging subtree until the project explicitly changes that policy
+
 ## `update`
 
 `node space update` updates a source checkout from the configured Git update repository.
