@@ -1,0 +1,155 @@
+{
+  "characters": [
+    {
+      "id": "char_001",
+      "name": "CEO Mimi",
+      "role": "Chief Executive Officer",
+      "capabilities": ["strategic_decisions", "content_prioritization", "brand_oversight"],
+      "status": "active",
+      "avatar": "mimi.webp"
+    },
+    {
+      "id": "char_002",
+      "name": "CTO Zara",
+      "role": "Chief Technology Officer",
+      "capabilities": ["technical_architecture", "motion_library", "pipeline_management"],
+      "status": "active",
+      "avatar": "zara.webp"
+    },
+    {
+      "id": "char_003",
+      "name": "CFO Maya",
+      "role": "Chief Financial Officer",
+      "capabilities": ["credit_tracking", "roi_calculation", "budget_management"],
+      "status": "active",
+      "avatar": "maya.webp"
+    }
+  ],
+  "cases": [
+    {
+      "id": "case_001",
+      "name": "ch01_geometric_outlier",
+      "description": "Geometric motion graphics campaign for Q1 launch.",
+      "status": "published",
+      "runtime": 127,
+      "created_at": "2024-01-10T09:00:00Z",
+      "updated_at": "2024-03-15T14:22:00Z"
+    },
+    {
+      "id": "case_002",
+      "name": "ch02_neon_pulse",
+      "description": "Neon-themed audio-visual production for social media.",
+      "status": "in_progress",
+      "runtime": 84,
+      "created_at": "2024-02-20T10:00:00Z",
+      "updated_at": "2024-04-01T08:45:00Z"
+    },
+    {
+      "id": "case_003",
+      "name": "ch03_brand_evolution",
+      "description": "Full brand refresh with updated color system and typography.",
+      "status": "published",
+      "runtime": 203,
+      "created_at": "2024-03-05T11:00:00Z",
+      "updated_at": "2024-04-10T16:30:00Z"
+    }
+  ],
+  "beats": [
+    {
+      "id": "beat_001",
+      "case_id": "case_001",
+      "title": "Intro Sequence",
+      "type": "motion_graphic",
+      "status": "completed",
+      "duration_seconds": 15,
+      "assigned_to": "char_002"
+    },
+    {
+      "id": "beat_002",
+      "case_id": "case_001",
+      "title": "Product Showcase Loop",
+      "type": "video",
+      "status": "needs_update",
+      "duration_seconds": 30,
+      "assigned_to": "char_002"
+    },
+    {
+      "id": "beat_003",
+      "case_id": "case_002",
+      "title": "Neon Grid Animation",
+      "type": "motion_graphic",
+      "status": "needs_update",
+      "duration_seconds": 20,
+      "assigned_to": "char_002"
+    },
+    {
+      "id": "beat_004",
+      "case_id": "case_002",
+      "title": "Audio Sync Layer",
+      "type": "audio",
+      "status": "failed",
+      "duration_seconds": 60,
+      "assigned_to": "char_003"
+    },
+    {
+      "id": "beat_005",
+      "case_id": "case_003",
+      "title": "Brand Sting",
+      "type": "motion_graphic",
+      "status": "completed",
+      "duration_seconds": 5,
+      "assigned_to": "char_001"
+    },
+    {
+      "id": "beat_006",
+      "case_id": "case_003",
+      "title": "Color System Explainer",
+      "type": "video",
+      "status": "failed",
+      "duration_seconds": 45,
+      "assigned_to": "char_001"
+    }
+  ],
+  "assets": [
+    {
+      "id": "asset_001",
+      "beat_id": "beat_001",
+      "case_id": "case_001",
+      "filename": "intro_sequence_v3.mp4",
+      "type": "video",
+      "credits_consumed": 120,
+      "revenue_attributed": 800,
+      "created_at": "2024-01-15T12:00:00Z"
+    },
+    {
+      "id": "asset_002",
+      "beat_id": "beat_005",
+      "case_id": "case_003",
+      "filename": "brand_sting_final.mp4",
+      "type": "video",
+      "credits_consumed": 45,
+      "revenue_attributed": 300,
+      "created_at": "2024-03-20T14:00:00Z"
+    },
+    {
+      "id": "asset_003",
+      "beat_id": "beat_001",
+      "case_id": "case_001",
+      "filename": "intro_bg_texture.png",
+      "type": "image",
+      "credits_consumed": 20,
+      "revenue_attributed": 150,
+      "created_at": "2024-01-12T09:30:00Z"
+    },
+    {
+      "id": "asset_004",
+      "beat_id": "beat_005",
+      "case_id": "case_003",
+      "filename": "brand_audio_sting.mp3",
+      "type": "audio",
+      "credits_consumed": 30,
+      "revenue_attributed": 200,
+      "created_at": "2024-03-18T11:00:00Z"
+    }
+  ]
+}

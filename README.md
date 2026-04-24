@@ -145,3 +145,23 @@ DeepWiki covers the human-readable side of that same knowledge base. Together, t
 If you want the deep tour, start here:
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/agent0ai/space-agent)
+
+## mjunkie-mcp – Multimedia Junkie MCP Server
+
+The [`mjunkie-mcp/`](./mjunkie-mcp/) directory contains the **Sovereign Engine MCP server** for the Multimedia Junkie creative production ecosystem. It exposes ten MCP tools and two MCP resources so Space Agent can:
+
+- Query and update the content pipeline (characters, cases, beats, assets)
+- Enforce Multimedia Junkie brand guidelines in every generated UI or content piece
+- Render Spatial Dashboards in Command Center (12×8 grid) or Spatial Floating (AR) modes
+- Run autonomous CEO Mimi / CTO Zara / CFO Maya persona workflows
+
+```bash
+cd mjunkie-mcp
+npm install
+npm run build
+npm run db    # starts Sovereign Engine (json-server) on port 3000
+npm start     # starts MCP server on stdio
+npm test      # runs all 53 phase-aligned tests
+```
+
+See [`mjunkie-mcp/README.md`](./mjunkie-mcp/README.md) for the full reference and [`mjunkie-mcp/SKILL.md`](./mjunkie-mcp/SKILL.md) for the Space Agent integration guide.
