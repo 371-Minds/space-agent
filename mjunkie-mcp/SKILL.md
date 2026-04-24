@@ -43,21 +43,24 @@
 
 ## How Space Agent Uses generate_dashboard_layout
 
-Call this tool to build and render the Multimedia Junkie dashboard directly in the Space Agent workspace:
+Call this tool to build and render the Multimedia Junkie dashboard directly in the Space Agent workspace. The examples below show the conceptual tool-call pattern; adapt the syntax to your MCP client library:
 
 ```javascript
 // Command Center mode (standard desktop)
-const layout = await mcp.call('generate_dashboard_layout', {
+// Conceptual pseudocode – adapt to your MCP client API
+const result = await mcpClient.callTool('generate_dashboard_layout', {
   mode: 'command_center',
   title: 'MJ Production Hub'
 });
+const layout = JSON.parse(result.content[0].text);
 // layout.cells contains widget definitions for the 12×8 grid
 
 // Spatial Floating mode (AR / Vision Pro)
-const arLayout = await mcp.call('generate_dashboard_layout', {
+const arResult = await mcpClient.callTool('generate_dashboard_layout', {
   mode: 'spatial_floating',
   title: 'MJ Spatial Hub'
 });
+const arLayout = JSON.parse(arResult.content[0].text);
 // arLayout.layers contains 3D depth-layered widgets
 ```
 
@@ -67,20 +70,20 @@ const arLayout = await mcp.call('generate_dashboard_layout', {
 
 ## How to Loop Over needs_update Beats
 
-Use the Sovereign Engine poll pattern to automate content generation triggers:
+Use the Sovereign Engine poll pattern to automate content generation triggers. The examples below are conceptual pseudocode – adapt them to your MCP client library:
 
 ```javascript
 // Step 1: Find all beats that need update
-const result = await mcp.call('query_content', {
+const queryResult = await mcpClient.callTool('query_content', {
   endpoint: '/beats',
   params: { status: 'needs_update' }
 });
-const beats = JSON.parse(result.content[0].text);
+const beats = JSON.parse(queryResult.content[0].text);
 
 // Step 2: For each beat, trigger generation and update status
 for (const beat of beats) {
   // Mark as in_progress
-  await mcp.call('update_beat_status', {
+  await mcpClient.callTool('update_beat_status', {
     beat_id: beat.id,
     status: 'in_progress'
   });
@@ -89,7 +92,7 @@ for (const beat of beats) {
   // ...
 
   // Mark as completed (or failed on error)
-  await mcp.call('update_beat_status', {
+  await mcpClient.callTool('update_beat_status', {
     beat_id: beat.id,
     status: 'completed'
   });
