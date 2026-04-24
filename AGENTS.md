@@ -134,6 +134,9 @@ Test docs:
 - `/tests/agent_llm_performance/AGENTS.md`
 - `/tests/browser_component_harness/AGENTS.md`
 
+MCP server docs:
+- `/mjunkie-mcp/AGENTS.md`
+
 ## Programming Guide
 
 These rules apply across the codebase:
@@ -180,6 +183,8 @@ Top-level structure:
 - `server/`: thin local infrastructure runtime, with page shells, request routing, API hosting, fetch proxying, file-watch indexes, auth/session infrastructure, and Git support code
 - `tests/`: repo-level verification harnesses, prepared evaluation fixtures, and saved result artifacts
 - `packaging/`: optional Electron host and packaging scripts; native hosts should stay thin
+- `mjunkie-mcp/`: standalone Multimedia Junkie MCP server; exposes the Sovereign Engine content pipeline, brand system, UI template tools, and persona workflow tools to Space Agent and any MCP-compatible framework; see [`mjunkie-mcp/AGENTS.md`](./mjunkie-mcp/AGENTS.md) for its full contract
+- `docs/`: project planning documents including `PLAN.md`, `PROMPTS.md`, and `TODO.md`
 
 Project concepts:
 

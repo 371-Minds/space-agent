@@ -1,0 +1,31 @@
+{
+  "name": "mjunkie-mcp",
+  "version": "1.0.0",
+  "description": "Multimedia Junkie MCP Server – Sovereign Engine API bridge for autonomous content generation and spatial dashboard rendering.",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "db": "json-server --watch db.json --port 3000",
+    "test": "npm run build && node --test tests/",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": ["mcp", "multimedia", "sovereign-engine", "space-agent"],
+  "author": "Multimedia Junkie",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "json-server": "^1.0.0-beta.3",
+    "tsx": "^4.0.0",
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

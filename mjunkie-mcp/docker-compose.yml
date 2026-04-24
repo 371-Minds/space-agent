@@ -1,0 +1,27 @@
+version: '3.9'
+
+services:
+  sovereign-engine:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - ./db.json:/app/db.json
+    command: >
+      sh -c "npm install -g json-server@1.0.0-beta.3 && json-server --watch db.json --port 3000 --host 0.0.0.0"
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/beats"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  mjunkie-mcp:
+    build: .
+    depends_on:
+      sovereign-engine:
+        condition: service_healthy
+    environment:
+      - SOVEREIGN_ENGINE_URL=http://sovereign-engine:3000
+    stdin_open: true
+    tty: true
