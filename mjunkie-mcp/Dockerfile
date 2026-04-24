@@ -2,12 +2,9 @@
 FROM oven/bun:1-alpine AS builder
 
 WORKDIR /app
-COPY package.json bun.lockb* ./
-# bun.lockb* is optional: the wildcard allows the first Docker build to run
-# without a committed lockfile. After `bun install` runs locally and bun.lockb
-# is committed, subsequent builds will use --frozen-lockfile semantics via Bun's
-# default behavior when the lockfile is present.
-RUN bun install
+COPY package.json bun.lock ./
+# Use the committed lockfile to guarantee reproducible dependency resolution.
+RUN bun install --frozen-lockfile
 
 COPY tsconfig.json ./
 COPY src ./src
@@ -22,8 +19,10 @@ WORKDIR /app
 RUN bun add -g json-server@1.0.0-beta.3
 
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY package.json db.json ./
+# Install only production dependencies to keep the image lean.
+COPY package.json bun.lock ./
+RUN bun install --production --frozen-lockfile
+COPY db.json ./
 
 # Sovereign Engine port
 EXPOSE 3000

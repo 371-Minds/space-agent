@@ -77,10 +77,10 @@ bun run dev   # bun --watch (no build step needed)
 
 ## Running Tests
 ```bash
-bun test
+bun run test
 ```
 
-Tests use the Node.js built-in test runner with mock HTTP servers. No external services required.
+Tests use the Node.js built-in `node:test` runner (invoked via `node --test`). `bun run test` builds `dist/` first so the test files can import the compiled output. Node.js ≥ 20 must be available alongside Bun for the test step.
 
 ---
 

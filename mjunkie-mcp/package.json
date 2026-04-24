@@ -9,7 +9,7 @@
     "start": "bun dist/index.js",
     "dev": "bun --watch src/index.ts",
     "db": "json-server --watch db.json --port 3000",
-    "test": "bun run build && bun test tests/",
+    "test": "bun run build && node --test tests/",
     "lint": "tsc --noEmit"
   },
   "keywords": ["mcp", "multimedia", "sovereign-engine", "space-agent"],

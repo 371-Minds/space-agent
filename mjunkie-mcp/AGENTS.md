@@ -82,7 +82,7 @@ The `baseUrl` parameter enables unit testing against a mock HTTP server without 
 - Build: `bun run build` (TypeScript → `dist/` via `tsc`)
 - Dev: `bun run dev` (`bun --watch src/index.ts`, no separate build step)
 - Sovereign Engine: `bun run db` (json-server on port 3000)
-- Tests: `bun test tests/` (Bun's built-in runner with `node:test` shim)
+- Tests: `bun run test` (builds `dist/` first via Bun, then runs the test suite with `node --test`; the test files use `node:test` API which requires Node.js ≥ 20)
 - `SOVEREIGN_ENGINE_URL` environment variable overrides the default `http://localhost:3000`
 - Docker: `docker compose up` starts both json-server and MCP server
 
