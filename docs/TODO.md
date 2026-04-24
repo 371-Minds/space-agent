@@ -74,7 +74,7 @@ This file tracks implementation progress against the phases in `docs/PLAN.md`.
 
 ## Enhancements
 
-- [x] `docker-compose.yml` for one-command local dev
+- [x] `docker-compose.yml` for one-command local dev and Docker engine
 - [x] `src/resources/sovereign.ts` – structured MCP Resource for db.json
 - [x] GitHub Actions workflow stubs in `mjunkie-mcp/.github/workflows/`
 - [x] Centralized error handling and graceful shutdown in `src/index.ts`
