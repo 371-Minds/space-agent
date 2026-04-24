@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mjunkie-mcp/**'
+  pull_request:
+    paths:
+      - 'mjunkie-mcp/**'
+
+jobs:
+  ci:
+    name: Lint · Build · Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mjunkie-mcp
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type-check
+        run: bun run lint
+
+      - name: Build
+        run: bun run build
+
+      - name: Test
+        run: bun run test
