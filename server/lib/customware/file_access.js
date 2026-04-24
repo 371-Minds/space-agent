@@ -139,8 +139,16 @@ function compileFilePathPatterns(patterns) {
     }
 
     seenPatterns.add(sourcePattern);
+    let matcher = null;
+
+    try {
+      matcher = globToRegExp(normalizedPattern);
+    } catch {
+      throw createHttpError(`Invalid file pattern: ${sourcePattern}`, 400);
+    }
+
     compiledPatterns.push({
-      matcher: globToRegExp(normalizedPattern),
+      matcher,
       sourcePattern
     });
   }

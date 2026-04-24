@@ -24,10 +24,18 @@ function normalizeExtensionPatterns(patterns) {
 }
 
 function compileExtensionPatterns(patterns) {
-  return normalizeExtensionPatterns(patterns).map((pattern) => ({
-    matcher: globToRegExp(pattern),
-    pattern
-  }));
+  return normalizeExtensionPatterns(patterns).map((pattern) => {
+    try {
+      return {
+        matcher: globToRegExp(pattern),
+        pattern
+      };
+    } catch {
+      const error = new Error(`Invalid extension pattern: ${pattern}`);
+      error.statusCode = 400;
+      throw error;
+    }
+  });
 }
 
 function matchesExtensionPattern(entry, compiledPatterns) {

@@ -2,6 +2,11 @@ import path from "node:path";
 
 function normalizePathSegment(input) {
   const rawValue = String(input || "").trim().replaceAll("\\", "/");
+
+  if (rawValue.split("/").some((segment) => segment === "..")) {
+    throw new Error(`Path escapes app directory: ${input}`);
+  }
+
   const normalized = path.posix.normalize(`/${rawValue}`).slice(1);
 
   if (!normalized || normalized === ".") {

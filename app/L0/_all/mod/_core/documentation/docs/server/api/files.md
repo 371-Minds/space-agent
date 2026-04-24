@@ -48,6 +48,7 @@ Important rules:
 - directories are usually identified with a trailing `/`
 - `~` and `~/...` expand to the authenticated user's `L2/<username>/...`
 - logical paths do not change when `CUSTOMWARE_PATH` relocates writable storage
+- raw `..` traversal segments are rejected during logical path normalization instead of being silently collapsed back under the app root
 
 ## Frontend Helper Surface
 
@@ -165,6 +166,7 @@ Behavior summary:
 
 - accepts path patterns rather than exact file paths
 - patterns are normalized before matching
+- malformed patterns fail as `400` client errors instead of surfacing backend regex exceptions
 - returns matched logical project paths grouped by the original pattern
 - accepts `access: "write"` or `writableOnly: true` to limit matches to paths the user can write
 - accepts `gitRepositories: true`; with a pattern such as `**/.git/`, it returns matching local-history owner roots such as `L1/team/` or `L2/alice/`, not the reserved `.git` paths themselves

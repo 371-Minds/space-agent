@@ -14,17 +14,12 @@ Current deeper docs:
 
 - `tests/agent_llm_performance/AGENTS.md`
 - `tests/browser_component_harness/AGENTS.md`
-- `tests/agent_llm_performance_structured/AGENTS.md`
-- `tests/agent_llm_turn_flags/AGENTS.md`
 
 Parent vs child split:
 
 - this file owns the top-level test layout and shared test-workflow boundaries
 - `agent_llm_performance/AGENTS.md` owns the LLM prompt-performance harness, its config, cases, prompts, and scoring rules
 - `browser_component_harness/AGENTS.md` owns the standalone Electron browser-component harness under `tests/browser_component_harness/`
-- `agent_llm_performance_structured/AGENTS.md` owns the structured-output LLM prompt-performance harness, its schema contract, cases, prompts, and scoring rules
-  - this harness is currently an experimental comparison track, not the default replacement for the free-text harness
-- `agent_llm_turn_flags/AGENTS.md` owns the flagged-turn LLM prompt-performance harness, its config, cases, prompts, and scoring rules
 
 Child doc section pattern:
 
@@ -50,9 +45,13 @@ This scope owns:
 - `customware_git_history_test.mjs`: focused server-side harness for optional writable-layer Git history, adaptive debounce rules, primary-owned scheduling, per-repo queue serialization, repository discovery, pagination, nested filename filters with full file metadata, diff reads, operation previews, revert, ignore rules, rollback or forward-travel preservation, filtered-list `total: null` behavior, explicit `409` revert-conflict coverage, successful non-overlapping isomorphic revert coverage, and runtime-param-selected isomorphic-backend coverage for Time Travel diff, preview, rollback, and revert flows
 - `desktop_packaging_test.mjs`: focused packaging-runtime coverage for the packaged desktop host storage overrides so bundled desktop builds keep transient temp artifacts under a writable OS temp root, preserve the rebrand-stable packaged `userData` tree, keep backend-only auth fallback data under that user-data root instead of the installed app tree, keep the packaged updater log rooted at `<userData>/logs/desktop-updater.log`, keep Windows on the stock direct updater handoff while hardening the NSIS installer-side running-app shutdown path, detect malformed Windows updater metadata that omits the current arch installer and preserve the canonical fallback asset naming used to recover from it, stage same-version or downgrade debug reinstalls against canonical GitHub Release metadata, and clean stale updater `pending/` payloads after a marked install handoff without deleting reusable cache metadata
 - `extensions_load_request_shape_test.mjs`: focused frontend-loader request-shape coverage for top-level `maxLayer`, ordered grouped `patterns`, and grouped `extensions_load` responses without synthetic transport keys
+- `path_pattern_validation_test.mjs`: focused API hardening coverage for malformed user-supplied glob patterns reaching `file_paths` and `extensions_load`, ensuring they fail as client errors instead of surfacing backend regex exceptions
 - `assistant_message_evaluation_test.mjs`: focused frontend agent-runtime coverage for repeated-assistant-message loop detection, severity escalation, normalization of exact-message matches, and safe prepending of synthetic transcript logs ahead of real execution console output
 - `file_api_request_context_test.mjs`: live HTTP regression coverage for file endpoints that depend on router-supplied `headers` and `requestUrl` request-context fields
 - `file_write_operations_test.mjs`: focused server-side coverage for `file_write` append, prepend, line insert, pattern insert, and invalid insert-anchor behavior
+- `app_files_utils_test.mjs`: focused server utility coverage for app-path normalization, traversal rejection, glob detection, and common wildcard matching semantics shared by request parsing, file discovery, and extension lookup
+- `layer_limit_test.mjs`: focused server-side coverage for `maxLayer` parsing, request-source precedence, referer-derived admin clamping, fallback handling, and layer-visibility enforcement
+- `env_files_test.mjs`: focused server utility coverage for `.env` parsing, project env loading, value formatting, replacement writes, append writes, and key validation
 - `framework_context_test.mjs`: focused frontend-bootstrap coverage for generic `x-context` helpers, the framework-owned `data-runtime="browser|app"` context element, the derived `runtime-browser` or `runtime-app` tags, and the shared tag collection that metadata-driven skills consume alongside feature-owned tags such as `space:open` or `browser:open`
 - `github_auth_test.mjs`: focused coverage for GitHub token resolution via `SPACE_GITHUB_TOKEN`, no-auth behavior when the token is absent, and supervisor Git command auth-header injection
 - `module_discovery_state_test.mjs`: focused coverage for state-backed module inheritance, extension lookup, and module-management visibility across firmware `L0`, group `L1`, self `L2`, and admin cross-user `L2` access

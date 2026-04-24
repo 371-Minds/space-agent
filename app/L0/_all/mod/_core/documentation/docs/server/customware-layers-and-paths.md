@@ -32,6 +32,7 @@ Resolution rules:
 - `/app/L1/...` and `/app/L2/...` map into `CUSTOMWARE_PATH/L1/...` and `CUSTOMWARE_PATH/L2/...` when `CUSTOMWARE_PATH` is configured
 - otherwise writable paths map into repo `app/L1/...` and `app/L2/...`
 - `~/...` expands to the authenticated user's `L2/<username>/...`
+- raw `..` traversal segments are rejected during logical path normalization instead of being silently collapsed back under `/app`
 
 ## Permission Model
 

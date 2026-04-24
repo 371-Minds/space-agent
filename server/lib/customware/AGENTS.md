@@ -30,6 +30,7 @@ Current files:
 Path rules:
 
 - app-rooted paths normalize to `/app/...`
+- path normalization rejects raw `..` traversal segments instead of silently collapsing them back under the app root
 - logical `/app/L0/...` always resolve under repo `app/L0/...`
 - logical `/app/L1/...` and `/app/L2/...` resolve under `CUSTOMWARE_PATH/L1/...` and `CUSTOMWARE_PATH/L2/...` when `CUSTOMWARE_PATH` is configured, otherwise under repo `app/L1/...` and `app/L2/...`
 - writable user-relative shorthand `~` and `~/...` are expanded by `file_access.js`
@@ -102,6 +103,7 @@ Rules:
 
 - batch file operations must validate all targets before mutation begins
 - `file_write` defaults to replacement but also supports `append`, `prepend`, and `insert`; insert accepts exactly one anchor through `line`, `before`, or `after`, uses the first literal pattern match for `before` or `after`, treats `line` as a 1-based insertion point, and requires `utf8` encoding, while directory writes remain replace-only path creation
+- malformed user-supplied file or extension glob patterns must fail as `400` client errors instead of surfacing backend regex-construction failures as `500`s
 - single-path app-file deletes must continue to work when request plumbing passes `paths: undefined`; only an explicit non-array `paths` value should be rejected as malformed batch input
 - keep permission, duplication, overlap, path-normalization, and logical-to-disk resolution logic centralized here
 - frontend callers should derive writable roots from the canonical permission rules and the `user_self_info` identity fields instead of depending on a serialized scope payload
