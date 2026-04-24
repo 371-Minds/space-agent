@@ -47,20 +47,20 @@ mjunkie-mcp/
 ### Install & build
 ```bash
 cd mjunkie-mcp
-npm install
-npm run build
+bun install
+bun run build
 ```
 
 ### Run locally (two terminals)
 
 **Terminal 1 – Sovereign Engine:**
 ```bash
-npm run db        # starts json-server on http://localhost:3000
+bun run db        # starts json-server on http://localhost:3000
 ```
 
 **Terminal 2 – MCP Server:**
 ```bash
-npm start         # starts MCP server on stdio
+bun start         # starts MCP server on stdio
 ```
 
 ### Run with Docker
@@ -70,14 +70,14 @@ docker compose up   # starts both services
 
 ### Development mode (hot reload)
 ```bash
-npm run dev   # tsx watch (no build step needed)
+bun run dev   # bun --watch (no build step needed)
 ```
 
 ---
 
 ## Running Tests
 ```bash
-npm test
+bun test
 ```
 
 Tests use the Node.js built-in test runner with mock HTTP servers. No external services required.

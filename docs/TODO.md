@@ -76,5 +76,6 @@ This file tracks implementation progress against the phases in `docs/PLAN.md`.
 
 - [x] `docker-compose.yml` for one-command local dev
 - [x] `src/resources/sovereign.ts` – structured MCP Resource for db.json
-- [x] GitHub Actions workflow stubs in `mjunkie-mcp/.github/workflows/`
+- [x] GitHub Actions workflow stubs in `mjunkie-mcp/.github/workflows/` (`ci.yml` using Bun)
 - [x] Centralized error handling and graceful shutdown in `src/index.ts`
+- [x] Migrate tooling to Bun (package manager, dev server, test runner, Docker image)

@@ -22,7 +22,7 @@ json-server --watch db.json --port 3000 &
 JSON_SERVER_PID=$!
 
 echo "[mjunkie-mcp] Starting MCP server..."
-node dist/index.js &
+bun dist/index.js &
 MCP_PID=$!
 
 # Poll until either child exits, then trigger cleanup of the other

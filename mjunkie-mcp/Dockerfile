@@ -1,27 +1,26 @@
 # ── Stage 1: Build TypeScript ────────────────────────────────────────────────
-FROM node:20-alpine AS builder
+FROM oven/bun:1-alpine AS builder
 
 WORKDIR /app
-COPY package*.json ./
-# Install all deps (including devDeps) so tsc is available, then prune after build
-RUN npm ci
+COPY package.json bun.lockb* ./
+# Install all deps (including devDeps) so tsc is available
+RUN bun install
 
 COPY tsconfig.json ./
 COPY src ./src
-RUN npx tsc && npm prune --omit=dev
+RUN bun run build
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────────────
-FROM node:20-alpine AS runtime
+FROM oven/bun:1-alpine AS runtime
 
 WORKDIR /app
 
 # Install json-server globally for the Sovereign Engine
-RUN npm install -g json-server@1.0.0-beta.3
+RUN bun add -g json-server@1.0.0-beta.3
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
-COPY package*.json ./
-COPY db.json ./
+COPY package.json db.json ./
 
 # Sovereign Engine port
 EXPOSE 3000

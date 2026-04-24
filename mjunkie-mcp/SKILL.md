@@ -126,7 +126,7 @@ Add to your Space Agent MCP configuration:
 {
   "mcpServers": {
     "mjunkie-mcp": {
-      "command": "node",
+      "command": "bun",
       "args": ["/path/to/mjunkie-mcp/dist/index.js"],
       "env": {
         "SOVEREIGN_ENGINE_URL": "http://localhost:3000"
@@ -139,8 +139,8 @@ Add to your Space Agent MCP configuration:
 Start the Sovereign Engine separately:
 ```bash
 cd mjunkie-mcp
-npm run db       # starts json-server on port 3000
-npm start        # starts MCP server
+bun run db       # starts json-server on port 3000
+bun start        # starts MCP server
 ```
 
 Or use Docker for a one-command setup:
