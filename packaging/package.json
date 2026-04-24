@@ -3,7 +3,7 @@
   "private": true,
   "description": "Native desktop packaging toolchain for Space Agent.",
   "dependencies": {
-    "electron": "^38.8.6",
+    "electron": "^39.8.1",
     "electron-builder": "^26.0.12"
   },
   "overrides": {
