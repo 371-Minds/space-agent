@@ -3,7 +3,10 @@ FROM oven/bun:1-alpine AS builder
 
 WORKDIR /app
 COPY package.json bun.lockb* ./
-# Install all deps (including devDeps) so tsc is available
+# bun.lockb* is optional: the wildcard allows the first Docker build to run
+# without a committed lockfile. After `bun install` runs locally and bun.lockb
+# is committed, subsequent builds will use --frozen-lockfile semantics via Bun's
+# default behavior when the lockfile is present.
 RUN bun install
 
 COPY tsconfig.json ./
