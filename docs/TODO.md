@@ -6,7 +6,7 @@ This file tracks the next planning and execution steps for the shared simulation
 
 ## Track 1: Separate Hermes-Based Simulator Repo
 
-- [ ] Create the separate simulator repo from `nativ3ai/hermes-geopolitical-market-sim`
+- [ ] Create the separate simulator repo from [`nativ3ai/hermes-geopolitical-market-sim`](https://github.com/nativ3ai/hermes-geopolitical-market-sim)
 - [ ] Preserve the Hermes-optimized runtime path
 - [ ] Identify and remove domain assumptions that are too specific to geopolitics
 - [ ] Import the useful MiroFish patterns into the new simulator repo

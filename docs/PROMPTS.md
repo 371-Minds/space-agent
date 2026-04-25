@@ -1,8 +1,10 @@
-# Multimedia Junkie MCP (mjunkie-mcp) - Copilot & Agent Prompts
+# Multimedia Junkie MCP (mjunkie-mcp) - Legacy Bootstrap Prompts
 
-This document contains a curated set of prompts designed for GitHub Copilot, Space Agent, or any other LLM assistant to autonomously build the `mjunkie-mcp` server. 
+This document contains a curated set of legacy prompts designed for GitHub Copilot, Space Agent, or any other LLM assistant to autonomously build the original `mjunkie-mcp` server bootstrap.
 
-Copy and paste these prompts sequentially into your AI assistant to execute the development plan outlined in `PLAN.md`.
+These prompts map to the completed bootstrap plan that used to live in `docs/PLAN.md`. They are kept here as historical build prompts for the original `mjunkie-mcp` implementation.
+
+For the current simulator, Memoria, and root Bun migration direction, use `docs/PLAN.md` and `docs/TODO.md` instead of this legacy bootstrap sequence.
 
 ---
 

@@ -67,7 +67,7 @@ The Space Agent root Bun migration should be planned and validated independently
 - public install instructions
 - release automation
 
-## Workstream A: External Hermes-Based Simulation Repo
+## Track 1: External Hermes-Based Simulation Repo
 
 ### Goal
 
@@ -89,7 +89,7 @@ Create a reusable simulation engine optimized for Hermes and suitable for Multim
 - local development and evaluation flow for Hermes
 - stable tool/service boundary for external callers
 
-## Workstream B: Space Agent and `mjunkie-mcp` Integration
+## Track 2: Space Agent and `mjunkie-mcp` Integration
 
 ### Goal
 
@@ -109,7 +109,7 @@ Expose the simulator to agent workflows without replacing existing Space Agent m
 - clean separation between Space Agent memory and simulator memory
 - repeatable benchmarking flows comparing Space Agent memory to Memoria-backed simulation memory
 
-## Workstream C: Root Bun Migration For This Repo
+## Track 3: Root Bun Migration For This Repo
 
 ### Goal
 
@@ -128,9 +128,9 @@ Migrate the root repo to Bun without breaking packaging, supervisor updates, or 
 - explicit Bun migration policy for root and packaging
 - updated docs and automation once the migration is proven safe
 
-## Recommended Implementation Order
+## Recommended Track Order
 
-### Phase 1 — simulator foundation
+### Track 1 order — simulator foundation
 
 1. stand up the separate Hermes-based simulator repo
 2. generalize the imported repo for reusable simulation scenarios
@@ -138,14 +138,14 @@ Migrate the root repo to Bun without breaking packaging, supervisor updates, or 
 4. embed Memoria natively
 5. fix any imported runtime/build issues inside that repo
 
-### Phase 2 — integration
+### Track 2 order — integration
 
 1. define the external invocation contract
 2. add Space Agent skill-first guidance for simulator use
 3. add `mjunkie-mcp` orchestration around MJ-specific workflows
 4. create benchmarking workflows against Space Agent memory
 
-### Phase 3 — Bun migration
+### Track 3 order — Bun migration
 
 1. audit root npm assumptions
 2. test Bun against root install and packaging flows
