@@ -1,81 +1,51 @@
-# Multimedia Junkie MCP (mjunkie-mcp) – Development TODO
+# Space Agent + Multimedia Junkie Simulation Expansion TODO
 
-This file tracks implementation progress against the phases in `docs/PLAN.md`.
-
----
-
-## Phase 1: Foundation & Sovereign Engine Setup ✅
-
-- [x] Initialize `mjunkie-mcp/` Node.js TypeScript project
-- [x] Create `tsconfig.json` and `package.json` with build/start scripts
-- [x] Scaffold `db.json` – Sovereign Engine database
-  - [x] `/characters` (CEO Mimi, CTO Zara, CFO Maya)
-  - [x] `/beats` (content generation beats with status)
-  - [x] `/cases` (project campaigns)
-  - [x] `/assets` (generated multimedia files with credit costs)
-- [x] Implement core MCP tools in `src/tools/content.ts`
-  - [x] `query_content` – GET requests to Sovereign Engine
-  - [x] `update_beat_status` – PATCH/POST to update beat status
-  - [x] `track_finances` – aggregate asset credits and ROI
-- [x] Expose `db.json` as MCP Resource (`sovereign://db`)
-- [x] Write Phase 1 tests (`mjunkie-mcp/tests/phase1.test.mjs`)
-- [x] Update `README.md` with mjunkie-mcp section
-- [x] Update `AGENTS.md` with mjunkie-mcp index entry
+This file tracks the next planning and execution steps for the shared simulation stack, Memoria adoption, tool/skill-first integration, and the root Bun migration.
 
 ---
 
-## Phase 2: Brand System Integration ✅
+## Track 1: Separate Hermes-Based Simulator Repo
 
-- [x] Create `src/config/brand.ts` with full Multimedia Junkie brand config
-- [x] Implement `get_brand_guidelines` MCP tool (`src/tools/brand.ts`)
-- [x] Implement `get_color_palette` MCP tool
-- [x] Expose MCP resource `brand://multimedia-junkie/guidelines`
-- [x] Write Phase 2 tests (`mjunkie-mcp/tests/phase2.test.mjs`)
-- [x] Update `README.md` with brand system notes
-- [x] Update `AGENTS.md` brand system notes
-
----
-
-## Phase 3: Space Agent UI & Template System ✅
-
-- [x] Define widget JSON schemas (`src/schemas/widgets.ts`)
-  - [x] `time_date_card`
-  - [x] `hero_branding`
-  - [x] `metric_card`
-  - [x] `service_monitor`
-- [x] Implement `generate_dashboard_layout` tool (`src/tools/ui.ts`)
-  - [x] `command_center` mode (12×8 grid)
-  - [x] `spatial_floating` mode (3D depth-layered)
-- [x] Implement `update_widget_state` tool
-- [x] Write Phase 3 tests (`mjunkie-mcp/tests/phase3.test.mjs`)
-- [x] Update `README.md` and `AGENTS.md`
+- [ ] Create the separate simulator repo from [`nativ3ai/hermes-geopolitical-market-sim`](https://github.com/nativ3ai/hermes-geopolitical-market-sim)
+- [ ] Preserve the Hermes-optimized runtime path
+- [ ] Identify and remove domain assumptions that are too specific to geopolitics
+- [ ] Import the useful MiroFish patterns into the new simulator repo
+- [ ] Replace the previous external memory dependency with native Memoria
+- [ ] Define the simulator's stable scenario and output contracts
+- [ ] Fix imported build/runtime issues in the simulator repo
+- [ ] Add deterministic local tests for the simulator repo
+- [ ] Document how Space Agent and `mjunkie-mcp` are expected to invoke it
 
 ---
 
-## Phase 4: Persona Workflows & Automation ✅
+## Track 2: Space Agent + `mjunkie-mcp` Integration
 
-- [x] Implement `mimi_strategic_query` (`src/tools/personas.ts`)
-- [x] Implement `zara_tech_query`
-- [x] Implement `maya_finance_query`
-- [x] Write Phase 4 tests (`mjunkie-mcp/tests/phase4.test.mjs`)
-- [x] Update `README.md` and `AGENTS.md`
-
----
-
-## Phase 5: Deployment & Handoff ✅
-
-- [x] Create `Dockerfile` (json-server + MCP server)
-- [x] Create `SKILL.md` (Space Agent consumption guide)
-- [x] Finalize `mjunkie-mcp/README.md`
-- [x] Create `mjunkie-mcp/AGENTS.md`
-- [x] Run `parallel_validation`
+- [ ] Keep the existing Space Agent memory implementation unchanged
+- [ ] Define the benchmarking approach for comparing Space Agent memory with Memoria
+- [ ] Add a tool/skill-first integration plan for invoking the external simulator
+- [ ] Add Space Agent-facing skill guidance for when to call the simulator
+- [ ] Add Multimedia Junkie-specific orchestration in `mjunkie-mcp`
+- [ ] Keep the integration thin so simulation logic stays outside this repo
+- [ ] Document the boundary between Space Agent memory and simulator memory
 
 ---
 
-## Enhancements
+## Track 3: Root Bun Migration Audit
 
-- [x] `docker-compose.yml` for one-command local dev and Docker engine
-- [x] `src/resources/sovereign.ts` – structured MCP Resource for db.json
-- [x] GitHub Actions workflow stubs in `mjunkie-mcp/.github/workflows/` (`ci.yml` using Bun)
-- [x] Centralized error handling and graceful shutdown in `src/index.ts`
-- [x] Migrate tooling to Bun (package manager, dev server, test runner, Docker image)
+- [ ] Audit root `package.json` npm-first scripts
+- [ ] Audit packaging install and lockfile expectations
+- [ ] Audit supervisor staged-release dependency install behavior
+- [ ] Audit public README and docs for npm-canonical instructions
+- [ ] Audit CI and release automation for npm assumptions
+- [ ] Decide the desired lockfile and package-manager policy for the root repo
+
+---
+
+## Track 4: Root Bun Migration Execution
+
+- [ ] Validate Bun-based root install behavior
+- [ ] Validate packaging dependency install behavior under the chosen Bun policy
+- [ ] Validate desktop packaging flows after the migration
+- [ ] Validate supervised staged release installs after the migration
+- [ ] Update docs and automation only after the migration path passes validation
+- [ ] Declare Bun canonical at the root only when the above paths are stable
