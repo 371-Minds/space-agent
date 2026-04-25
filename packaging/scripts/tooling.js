@@ -8,7 +8,7 @@ const packagingRequire = createRequire(path.join(PACKAGING_ROOT, "package.json")
 function createMissingPackagingDependencyError(packageName) {
   const suffix = packageName ? ` Missing package: ${packageName}.` : "";
   return new Error(
-    `Packaging dependencies are not installed.${suffix} Run "npm install --prefix packaging" before using desktop or packaging commands.`
+    `Packaging dependencies are not installed.${suffix} Run "npm run install:packaging" (canonical) or "npm run install:packaging:bun" before using desktop or packaging commands.`
   );
 }
 
