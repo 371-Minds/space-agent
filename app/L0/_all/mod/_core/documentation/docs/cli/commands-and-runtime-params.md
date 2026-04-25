@@ -81,7 +81,7 @@ The repo keeps desktop-packaging build dependencies out of the root install.
 Current behavior:
 
 - `npm run install:packaging` is the canonical helper and refreshes `packaging/package-lock.json`
-- `cd packaging && bun install` is an optional local compatibility path for Bun-managed `node_modules`
+- `npm run install:packaging:bun` is an optional local compatibility path for Bun-managed `node_modules`
 - npm remains the authoritative lockfile policy for the packaging subtree until the project explicitly changes that policy
 
 ## `update`

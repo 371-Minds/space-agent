@@ -121,7 +121,6 @@ node space serve
 
 ```bash
 npm run dev # server with auto-reload
-node --test tests/*.mjs # repo-level tests
 ```
 
 Open the checked-in VS Code launch entry `Dev Server (npm run dev)` when you want breakpoints in `server/` code. It launches the same watcher and auto-attaches to the spawned `node space serve` process across restarts.
@@ -131,7 +130,7 @@ Browser-harness and packaged-desktop tests also need the optional packaging depe
 ```bash
 npm run install:packaging
 # optional Bun-compatible install path
-cd packaging && bun install
+npm run install:packaging:bun
 ```
 
 ### For production
