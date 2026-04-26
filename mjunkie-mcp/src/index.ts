@@ -139,11 +139,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     // Phase 5
     case 'invoke_simulator_workflow':
       return handleInvokeSimulatorWorkflow(
-        args as Parameters<typeof handleInvokeSimulatorWorkflow>[0],
+        args as unknown as Parameters<typeof handleInvokeSimulatorWorkflow>[0],
       );
     case 'benchmark_memory_modes':
       return handleBenchmarkMemoryModes(
-        args as Parameters<typeof handleBenchmarkMemoryModes>[0],
+        args as unknown as Parameters<typeof handleBenchmarkMemoryModes>[0],
       );
 
     default:
