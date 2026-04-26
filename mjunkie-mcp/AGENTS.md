@@ -19,9 +19,10 @@ This `AGENTS.md` owns the concrete implementation contracts for the entire `mjun
 | `src/tools/brand.ts` | Phase 2: Brand guidelines + color palette tools + MCP resource |
 | `src/tools/ui.ts` | Phase 3: Dashboard layout generation (command_center / spatial_floating) |
 | `src/tools/personas.ts` | Phase 4: CEO Mimi / CTO Zara / CFO Maya autonomous persona workflows |
+| `src/tools/simulator.ts` | Phase 5: external simulator invocation + repeatable memory benchmarking |
 | `src/resources/sovereign.ts` | MCP Resource exposing live db.json to agent context |
 | `db.json` | Sovereign Engine database (characters, cases, beats, assets) |
-| `tests/` | Phase-aligned test files using Node.js built-in test runner + mock HTTP servers |
+| `tests/` | Phase-aligned test files using Node.js built-in test runner + mock HTTP servers, including simulator orchestration and deterministic memory-benchmark coverage |
 
 ---
 
@@ -50,6 +51,12 @@ Valid beat status values: `needs_update` | `in_progress` | `completed` | `failed
 
 Do not change these URIs without updating `SKILL.md` and any agent configurations referencing them.
 
+### Simulator memory separation
+The Phase 5 simulator tools must treat Space Agent memory and simulator memory as separate stores:
+- `invoke_simulator_workflow` may forward a `simulation_memory_namespace` to the external simulator, but it must report Space Agent memory as untouched
+- `benchmark_memory_modes` must compare structured `entries` arrays side by side and must not merge them into one memory packet
+- any future simulator adapter must preserve the same separation guarantee unless the user explicitly asks for migration behavior
+
 ---
 
 ## Tool Handler Pattern
@@ -70,7 +77,7 @@ The `baseUrl` parameter enables unit testing against a mock HTTP server without 
 
 - Test files live in `mjunkie-mcp/tests/` named `phaseN.test.mjs`
 - All async tool handlers are tested with a `createServer`-based mock instead of live services
-- Run with: `npm test` (Node.js built-in test runner, no jest/vitest)
+- Run with: `bun run test` (builds `dist/` first, then uses the Node.js built-in test runner; no jest/vitest)
 - Tests must pass without a running json-server or network access
 
 ---
@@ -92,4 +99,5 @@ The `baseUrl` parameter enables unit testing against a mock HTTP server without 
 - Changing brand config → update brand invariant section above and `SKILL.md` brand color table
 - Adding a new widget type → update `src/schemas/widgets.ts`, `src/tools/ui.ts`, both layout builders, and `phase3.test.mjs`
 - Adding a new persona tool → update `src/tools/personas.ts`, `src/index.ts`, and `phase4.test.mjs`
+- Adding or changing a simulator tool → update `src/tools/simulator.ts`, `src/index.ts`, `SKILL.md`, `README.md`, and `phase5.test.mjs`
 - Changing a resource URI → update `SKILL.md`, `src/resources/`, and this file

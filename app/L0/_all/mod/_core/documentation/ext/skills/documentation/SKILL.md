@@ -34,6 +34,7 @@ recommended starting points
 - spaces and widgets: `app/spaces-and-widgets.md`
 - overlay agent runtime: `agent/onscreen-agent-runtime.md`
 - memory or promptinclude-backed agent memory: `agent/memory-and-prompt-includes.md`
+- MJ simulator workflows and memory benchmarking: `agent/mjunkie-simulator-integration.md`
 - prompt or execution protocol: `agent/prompt-and-execution.md`
 - skills or this documentation surface: `agent/skills-and-documentation.md`
 - server routing or pages: `server/request-flow-and-pages.md`
@@ -56,6 +57,7 @@ app/webllm-browser-runtime.md|WebLLM Browser Runtime|The routed WebLLM test surf
 app/spaces-and-widgets.md|Spaces And Widgets|Space storage, widget renderer contracts, widget-shell defaults, and the main `space.current` / `space.spaces` helpers.
 agent/onscreen-agent-runtime.md|Onscreen Agent Runtime|Overlay ownership, persistence, defaults, UI/runtime surfaces, and prompt file ownership.
 agent/memory-and-prompt-includes.md|Memory And Prompt Includes|Prompt-include-backed persistent memory workflow, standard `~/memory` files, and the memory-skill contract.
+agent/mjunkie-simulator-integration.md|MJunkie Simulator Integration|On-demand simulator skill flow, mjunkie-mcp Phase 5 tools, and benchmark-memory separation rules.
 agent/prompt-and-execution.md|Prompt And Execution|Prompt assembly order, message markers, execution transcript rules, and compaction behavior.
 agent/skills-and-documentation.md|Skills And Documentation|Skill discovery rules, top-level versus nested skills, conflict rules, and the documentation skill/helper contract.
 server/request-flow-and-pages.md|Request Flow And Pages|Exact server routing order, page shell contracts, auth gating, and direct app-file fetches.

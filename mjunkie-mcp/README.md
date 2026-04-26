@@ -20,14 +20,16 @@ mjunkie-mcp/
 │   │   ├── content.ts      # Phase 1: Sovereign Engine query/update/finance tools
 │   │   ├── brand.ts        # Phase 2: Brand guidelines + color palette tools
 │   │   ├── ui.ts           # Phase 3: Dashboard layout generation tools
-│   │   └── personas.ts     # Phase 4: CEO Mimi / CTO Zara / CFO Maya workflows
+│   │   ├── personas.ts     # Phase 4: CEO Mimi / CTO Zara / CFO Maya workflows
+│   │   └── simulator.ts    # Phase 5: simulator invocation + memory benchmarking
 │   └── resources/
 │       └── sovereign.ts    # MCP Resource: live db.json snapshot
 ├── tests/
 │   ├── phase1.test.mjs     # Sovereign Engine content tools tests
 │   ├── phase2.test.mjs     # Brand system tests
 │   ├── phase3.test.mjs     # UI template system tests
-│   └── phase4.test.mjs     # Persona workflow tests
+│   ├── phase4.test.mjs     # Persona workflow tests
+│   └── phase5.test.mjs     # Simulator orchestration + memory benchmark tests
 ├── db.json                 # Sovereign Engine database (json-server)
 ├── Dockerfile              # Multi-stage build (builder + runtime)
 ├── docker-compose.yml      # One-command local dev: json-server + MCP server
@@ -98,6 +100,8 @@ Tests use the Node.js built-in `node:test` runner (invoked via `node --test`). `
 | `mimi_strategic_query` | 4 | CEO executive summary |
 | `zara_tech_query` | 4 | CTO pipeline health |
 | `maya_finance_query` | 4 | CFO ROI breakdown |
+| `invoke_simulator_workflow` | 5 | Thin adapter for external MJ simulator workflows |
+| `benchmark_memory_modes` | 5 | Deterministic Space Agent vs simulator memory benchmark |
 
 ---
 
@@ -123,3 +127,15 @@ All generated UI must use these values:
 | Text | `#212121` | Body text |
 
 See [SKILL.md](./SKILL.md) for the complete Space Agent integration guide.
+
+---
+
+## Simulator Integration
+
+Phase 5 adds a simulator-first path for Multimedia Junkie workflows without replacing Space Agent memory:
+
+- `invoke_simulator_workflow` forwards a workflow payload to the external simulator configured by `MJ_SIMULATOR_URL` (default `http://localhost:3001`)
+- `benchmark_memory_modes` runs deterministic benchmark cases against separate `space_agent_memory.entries` and `simulation_memory.entries` arrays
+- both tools keep Space Agent `~/memory/...` content separate from simulator memory namespaces
+
+That lets Space Agent keep using prompt-include memory for user preferences and durable notes while the simulator handles world-state or Memoria-backed rehearsal memory externally.

@@ -56,6 +56,13 @@ import {
   handleMayaFinanceQuery,
 } from './tools/personas.js';
 
+import {
+  invokeSimulatorWorkflowTool,
+  benchmarkMemoryModesTool,
+  handleInvokeSimulatorWorkflow,
+  handleBenchmarkMemoryModes,
+} from './tools/simulator.js';
+
 // ── Resources ────────────────────────────────────────────────────────────────
 import {
   SOVEREIGN_RESOURCE_URI,
@@ -87,6 +94,9 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     mimiStrategicQueryTool,
     zaraTechQueryTool,
     mayaFinanceQueryTool,
+    // Phase 5 – Simulator orchestration
+    invokeSimulatorWorkflowTool,
+    benchmarkMemoryModesTool,
   ],
 }));
 
@@ -125,6 +135,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       return handleZaraTechQuery(args as Parameters<typeof handleZaraTechQuery>[0]);
     case 'maya_finance_query':
       return handleMayaFinanceQuery(args as Parameters<typeof handleMayaFinanceQuery>[0]);
+
+    // Phase 5
+    case 'invoke_simulator_workflow':
+      return handleInvokeSimulatorWorkflow(
+        args as Parameters<typeof handleInvokeSimulatorWorkflow>[0],
+      );
+    case 'benchmark_memory_modes':
+      return handleBenchmarkMemoryModes(
+        args as Parameters<typeof handleBenchmarkMemoryModes>[0],
+      );
 
     default:
       throw new Error(`Unknown tool: ${name}`);

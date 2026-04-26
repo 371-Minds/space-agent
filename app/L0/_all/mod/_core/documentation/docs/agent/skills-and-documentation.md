@@ -76,6 +76,7 @@ Current repo-owned shared top-level skills include:
 - `browser-manager`
 - `browser-control`
 - `memory`
+- `mjunkie-simulator`
 - `file-download`
 - `pdf-report`
 - `spaces`
@@ -89,6 +90,8 @@ Additional group-scoped skills may exist for narrower audiences.
 Some of those first-party ids are still gated by live context tags. For example, the shared `file-download`, `user-management`, and `browser-manager` skills require `onscreen`, `space-widgets` requires `space:open`, and `browser-control` auto-loads when `browser:open` is present on an onscreen surface. Skills may also target the framework-owned `runtime-browser` or `runtime-app` tags when their instructions depend on a normal web session versus the packaged desktop runtime. The shared `development` skill is the main frontend-development router and is intentionally not tag-gated, so it remains visible and auto-included as the stable index for its nested development skills. The first-party `memory` skill is also top-level and auto-loaded, and it keeps the prompt-include-backed `~/memory/` convention in model context without needing any special-case prompt-builder code. The first-party `spaces` skill is also top-level and auto-loaded without a tag gate.
 
 The first-party `development` tree is intentionally split into narrower nested skills. The top-level `development` skill is the always-included router for that tree: it should stay concise, but it must keep one visible subsection per nested development skill so agents can choose the right follow-up skill quickly.
+
+The first-party `mjunkie-simulator` skill is a top-level on-demand guide for Multimedia Junkie workflows that need external simulation or deterministic memory benchmarking. It should teach `invoke_simulator_workflow` and `benchmark_memory_modes`, keep Space Agent memory under `~/memory/...`, and treat simulator memory as an external namespace that must not silently replace or merge with prompt-include memory.
 
 In particular, `development/modules-routing` now teaches custom routed pages as the main alternative to spaces when the user wants a reusable feature surface, shows how to publish dashboard panels through `ext/panels/*.yaml`, and points agents at the importable helper script `/mod/_core/skillset/ext/skills/development/modules-routing/panel-tools.js` instead of pasting one-off browser snippets into the skill text.
 
